@@ -57,7 +57,7 @@ $ cp dctz-qt-zc-test ${ZC_INSTALL_HOME}/DCTZ/.
 
 Note that `$ZC_INSTALL_HOME` is not same as `$ZC_INSTALL_DIR`. Typically, `$ZC_INSTALL_DIR` is equal to `$ZC_INSTALL_HOME/Z-checker/zc-install`.
 
-3. Add the DCTZ configuration files.
+3. Add the DCTZ configuration files to Z-Checker.
 ```
 $ cp zc_patches/manageCompress-dctz-ec.cfg ${ZC_INSTALL_HOME}/.
 $ cp zc_patches/manageCompress-dctz-qt.cfg ${ZC_INSTALL_HOME}/.
@@ -68,6 +68,9 @@ Modify the `${ZC_INSTALL_HOME}` variable in `manageCompress-dctz-ec.cfg` and `ma
 $ ./manageCompressor -a DCTZ -m ec -c manageCompress-dctz-ec.cfg
 $ ./manageCompressor -a DCTZ -m qt -c manageCompress-dctz-qt.cfg
 ```
+
+Then, open `errBounds.cfg` under `${ZC_INSTALL_HOME}` and modify the error bounds (e.g., 1E-3, 1E-4, etc.) and compression cases (`dctz_ec` and `dctz_qt`) for DCTZ. Refer to an example `erroBounds.cfg` under the `zc-patches` folder.
+
 
 4. Create a new test-case, by executing `createNewZCCase.sh [test-case-name]`.
 
@@ -82,6 +85,6 @@ Change file paths in `varInfo.txt` to use test data (`$ cd tests, $ unzip dctz-t
 
 6. Run Z-checker.
 ```
-$ /runZCCase.sh -d REL [test-case-name] varInfo.txt
+$ ./runZCCase.sh -d REL [test-case-name] varInfo.txt
 ```
 
