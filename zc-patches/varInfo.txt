@@ -1,0 +1,6 @@
+vortex:LITTLE_ENDIAN:DOUBLE:37024:/home/gridsan/sson/data/vortex-chk50-pres.bin
+sedov:LITTLE_ENDIAN:DOUBLE:31040:/home/gridsan/sson/data/sedov-chk139-dens.bin
+cellular:LITTLE_ENDIAN:DOUBLE:32768:/home/gridsan/sson/data/cellular-0249.bin
+rlds:LITTLE_ENDIAN:DOUBLE:12960:/home/gridsan/sson/data/rlds.bin
+eddy:LITTLE_ENDIAN:DOUBLE:16384:/home/gridsan/sson/data/eddy-chk50-pres.bin
+mrsos:LITTLE_ENDIAN:DOUBLE:12960:/home/gridsan/sson/data/mrsos.bin
