@@ -60,14 +60,14 @@ Note that `$ZC_INSTALL_HOME` is not same as `$ZC_INSTALL_DIR`. Typically, `$ZC_I
 
 3. Add the DCTZ configuration files to Z-Checker.
 ```
-$ cp zc_patches/manageCompress-dctz-ec.cfg ${ZC_INSTALL_HOME}/.
-$ cp zc_patches/manageCompress-dctz-qt.cfg ${ZC_INSTALL_HOME}/.
+$ cp zc_patches/manageCompressor-dctz-ec.cfg ${ZC_INSTALL_HOME}/.
+$ cp zc_patches/manageCompressor-dctz-qt.cfg ${ZC_INSTALL_HOME}/.
 ```
 
-Modify the `${ZC_INSTALL_HOME}` variable in `manageCompress-dctz-ec.cfg` and `manageCompress-dctz-qt.cfg`, and execute the following commands:
+Modify the `${ZC_INSTALL_HOME}` variable in `manageCompressor-dctz-ec.cfg` and `manageCompressor-dctz-qt.cfg`, and execute the following commands:
 ```
-$ ./manageCompressor -a DCTZ -m ec -c manageCompress-dctz-ec.cfg
-$ ./manageCompressor -a DCTZ -m qt -c manageCompress-dctz-qt.cfg
+$ ./manageCompressor -a DCTZ -m ec -c manageCompressor-dctz-ec.cfg
+$ ./manageCompressor -a DCTZ -m qt -c manageCompressor-dctz-qt.cfg
 ```
 
 Then, open `errBounds.cfg` under `${ZC_INSTALL_HOME}` and modify the error bounds (e.g., 1E-3, 1E-4, etc.) and compression cases (`dctz_ec` and `dctz_qt`) for DCTZ. Refer to an example `erroBounds.cfg` under the `zc-patches` folder.
