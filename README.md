@@ -39,6 +39,7 @@ Making after setting `ZC_INSTALL_DIR` will generate two additional test programs
 To test the compiled DCTZ is working properly, download the test datasets from [here](https://sites.uml.edu/seungwoo-son/files/2019/07/dctz-test-data.zip) and run the following command:
 ````
 $ cd tests
+$ wget https://sites.uml.edu/seungwoo-son/files/2019/07/dctz-test-data.zip
 $ unzip dctz-test-data.zip
 $ ./test-dctz.sh
 ````
