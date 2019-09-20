@@ -73,7 +73,7 @@ $ ./manageCompressor -a DCTZ -m qt -c manageCompressor-dctz-qt.cfg
 Then, open `errBounds.cfg` under `${ZC_INSTALL_HOME}` and modify the error bounds (e.g., 1E-3, 1E-4, etc.) and compression cases (`dctz_ec` and `dctz_qt`) for DCTZ. Refer to an example `erroBounds.cfg` under the `zc-patches` folder.
 
 
-4. Create a new test-case, by executing `createNewZCCase.sh [test-case-name]`.
+4. Create a new test-case, by executing `createZCCase.sh [test-case-name]`.
 
 
 5. Modify listing files for all the test data.
