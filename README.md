@@ -11,7 +11,7 @@ International Conference on Massive Storage Systems and Technology (MSST), May 2
 ## Depencencies
 
 DCTZ requires the following libraries to build:
-- [FFTW](http://www.fftw.org/): DCT (including inverse DCT) routines in DCTZ is currently based on Fourier transform (DFT) routines in FFTW.
+- [FFTW](http://www.fftw.org/): DCT (including inverse DCT) routines in DCTZ are currently based on Fourier transform (DFT) routines in FFTW.
 - [zlib](https://www.zlib.net/): compressing bin indices and AC coefficients that need to be saved as it is.
 - [Z-checker-installer](https://github.com/CODARcode/z-checker-installer) (optional): when testing DCTZ within Z-Checker. Note that Z-checker-installer will install SZ and zfp automatically. 
 
