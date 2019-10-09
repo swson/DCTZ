@@ -162,7 +162,7 @@ int main (int argc, char * argv[])
 #endif /* WITH_Z_CHECKER */
     dctz_compress_float (f, N, &outSize, a_z, error_bound);
   }	  
-  printf ("oriFilePath = %s, outputFilePath = %s, datatype = %d error = %s, dim1 = %zu dim2 = %zu dim3=%zu \n", oriFilePath, outputFilePath, datatype, argv[2], r1, r2, r3);
+  printf ("oriFilePath = %s, outputFilePath = %s, datatype = %s error = %s, dim1 = %zu dim2 = %zu dim3 = %zu dim4 = %zu\n", oriFilePath, outputFilePath, datatype==0?"double":"float", argv[2], r1, r2, r3, r4);
   printf ("outsize = %zu\n", outSize);
   
 #ifdef WITH_Z_CHECKER

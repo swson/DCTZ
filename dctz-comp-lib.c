@@ -68,7 +68,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
     fprintf (stderr, "Out of memory: a_x\n");
     exit (1);
   }
-  if (error_bound < 5E-6) {
+  if (error_bound < 1E-6) {
     printf ("ERROR BOUND is not acceptable");
     exit (1);
   }

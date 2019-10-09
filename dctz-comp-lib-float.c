@@ -45,7 +45,7 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 #endif
 
   typesize = sizeof(float);
-  if (error_bound < 5E-6) {
+  if (error_bound < 1E-6) {
     printf ("ERROR BOUND is not acceptable");
     exit (1);
   }
