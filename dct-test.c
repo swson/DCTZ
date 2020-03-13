@@ -102,7 +102,7 @@ int main (int argc, char * argv[])
 
   FILE *fp_x;
   int icount;
-  size_t outSize = N; /* outSize is same as N */
+  size_t outSize = N*typesize; /* outSize is same as input */
   
   sprintf (outputFilePath, "%s.x", oriFilePath);
 
