@@ -12,7 +12,7 @@
 #include <assert.h>
 #include "dctz.h"
 
-/* gcc -o dct-test dct-test.c dct.c dct-float.c -lfftw3 -lfftw3-f -lm -Wall -g */
+/* gcc -o dct-test dct-test.c dct.c dct-float.c -lfftw3 -lfftw3f -lm -Wall -g */
 
 enum numtype {DOUBLE, FLOAT};
 
