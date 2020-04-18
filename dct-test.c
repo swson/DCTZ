@@ -12,7 +12,7 @@
 #include <assert.h>
 #include "dctz.h"
 
-/* gcc -o dct-test dct-test.c dct.c dct-float.c -lfftw3 -lfftw3-f -lm -Wall -g */
+/* gcc -o dct-test dct-test.c dct.c dct-float.c -lfftw3 -lfftw3f -lm -Wall -g */
 
 enum numtype {DOUBLE, FLOAT};
 
@@ -102,7 +102,7 @@ int main (int argc, char * argv[])
 
   FILE *fp_x;
   int icount;
-  size_t outSize = N; /* outSize is same as N */
+  size_t outSize = N*typesize; /* outSize is same as input */
   
   sprintf (outputFilePath, "%s.x", oriFilePath);
 
