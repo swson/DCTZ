@@ -1,5 +1,5 @@
 /**
- * @file dctz-zc-test.c
+ * @file dctz-test.c
  * @author Seung Woo Son
  * @date July 2019
  * @brief DCTZ test program for Z-Checker
