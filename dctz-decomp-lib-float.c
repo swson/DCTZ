@@ -152,7 +152,7 @@ int dctz_decompress_float (char *a_z, float *a_r)
 
   inflate (&infstream[0], Z_NO_FLUSH);
   inflateEnd (&infstream[0]);
-#ifndef DEBUG
+#ifndef SIZE_DEBUG
   printf ("uncompressed bin_index size is: %lu\n", infstream[0].total_out);
 #endif
 
@@ -175,7 +175,7 @@ int dctz_decompress_float (char *a_z, float *a_r)
 
   inflate (&infstream[1], Z_NO_FLUSH);
   inflateEnd (&infstream[1]);
-#ifndef DEBUG
+#ifndef SIZE_DEBUG
   printf ("uncompressed DC size is: %lu\n", infstream[1].total_out);
 #endif
 

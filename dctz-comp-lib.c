@@ -477,12 +477,12 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
 
   bin_indexz2 = (unsigned char*)realloc (bin_indexz, compSize_binindex); /* TODO: check error */
 
-#ifdef DEBUG
+#ifdef SIZE_DEBUG
   printf ("Compressed bin_index size is: %lu\n", compSize_binindex);
 #endif
 
   DCz2 = realloc (DCz, compSize_DC); /* TODO: check error */
-#ifdef DEBUG
+#ifdef SIZE_DEBUG
   printf ("Compressed DC size is: %lu\n", compSize_DC);
 #endif
 
@@ -540,7 +540,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   free (qtable);
 #endif
   
-#ifndef DEBUG
+#ifndef SIZE_DEBUG
   printf ("outSize = %zu\n", *outSize);
 #endif
 
