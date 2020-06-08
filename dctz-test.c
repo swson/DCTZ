@@ -133,7 +133,12 @@ int main (int argc, char * argv[])
       fprintf (stderr, "Out of memory: a_z\n");
       exit (1);
     }
-    fread (d, typesize, N, fp_in);
+
+    size_t bytes_read = fread (d, typesize, N, fp_in);
+    if (bytes_read != N) {
+      perror ("Error reading file");
+      exit (EXIT_FAILURE);
+    }
     dct_init (BLK_SZ);
 #ifdef WITH_Z_CHECKER
     dataProperty = ZC_startCmpr (varName, ZC_DOUBLE, d, r5, r4, r3, r2, r1);
@@ -155,7 +160,11 @@ int main (int argc, char * argv[])
       fprintf (stderr, "Out of memory: a_z\n");
       exit (1);
     }
-    fread (f, typesize, N, fp_in);
+    size_t bytes_read = fread (f, typesize, N, fp_in);
+    if (bytes_read != N) {
+      perror ("Error reading file");
+      exit (EXIT_FAILURE);
+    }
     dct_init_f (BLK_SZ);
 #ifdef WITH_Z_CHECKER
     dataProperty = ZC_startCmpr (varName, ZC_FLOAT, f, r5, r4, r3, r2, r1);
