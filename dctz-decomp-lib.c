@@ -292,6 +292,7 @@ int dctz_decompress (char *a_z, double *a_r)
 
   double range_max = error_bound * NBINS;
   double range_min = -error_bound * NBINS;
+  double qt_factor = 10.0;
  
   /* IDCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
@@ -314,9 +315,9 @@ int dctz_decompress (char *a_z, double *a_r)
 	  a_xr[i*BLK_SZ+j] = bin_center[sbin_id];
 	}
 	if (a_xr[i*BLK_SZ+j] > 0) {
-	  a_xr[i*BLK_SZ+j] = ((a_xr[i*BLK_SZ+j] - range_max)/error_bound)*qtable[j];
+	  a_xr[i*BLK_SZ+j] = ((a_xr[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
 	} else {
-	  a_xr[i*BLK_SZ+j] = ((a_xr[i*BLK_SZ+j] - range_min)/error_bound)*qtable[j];
+	  a_xr[i*BLK_SZ+j] = ((a_xr[i*BLK_SZ+j] - range_min)/(error_bound*qt_factor))*qtable[j];
 	}
 #else /* DCT_EC */
 	a_xr[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */

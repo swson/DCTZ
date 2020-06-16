@@ -308,6 +308,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
 #endif
   
   unsigned int k = N;
+  double qt_factor = 10.0;
   
   for (i=0; i<nblk; i++) {
     for (j=1; j<BLK_SZ; j++) {
@@ -318,9 +319,9 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
         double item = a_x[i*BLK_SZ+j];
         //if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound
 	if (item < range_min) {
-          item = (item/qtable[j])*error_bound + range_min;
+          item = (item/qtable[j])*error_bound*qt_factor + range_min;
         } else if(item > range_max) {
-          item = (item/qtable[j])*error_bound + range_max;
+          item = (item/qtable[j])*error_bound*qt_factor + range_max;
         }
       	a_x[i*BLK_SZ+j] = item; // update a_x with updated value
         if (item < range_min || item > range_max) {
