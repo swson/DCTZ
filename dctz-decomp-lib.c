@@ -32,9 +32,9 @@ int dctz_decompress (char *a_z, double *a_r)
   unsigned char *bin_index, *bin_indexz;
   unsigned int tot_AC_exact_count;
 #ifdef USE_TRUNCATE
-  float *DC, *DCz, *AC_exact;
+  float *DC, *DCz, *AC_exact, *AC_exactz;
 #else
-  double *DC, *DCz, *AC_exact;
+  double *DC, *DCz, *AC_exact, *AC_exactz;
 #endif /* USE_TRUNCATE */
   struct header h;
   double error_bound;
@@ -71,7 +71,6 @@ int dctz_decompress (char *a_z, double *a_r)
   printf ("N=%d, nblk=%d, SF=%e\n", N, nblk, SF);
 #endif
 
-
 #ifdef USE_TRUNCATE
   if (NULL == (DCz = (float *)malloc (nblk*sizeof(float)))) {
     fprintf (stderr, "Out of memory: DCz[]\n");
@@ -85,13 +84,25 @@ int dctz_decompress (char *a_z, double *a_r)
 #endif
 
 #ifdef USE_TRUNCATE
+  if (NULL == (AC_exactz = (float *)malloc (N*sizeof(float)))) {
+    fprintf (stderr, "Out of memory: AC_exactz[]\n");
+    exit (1);
+  }
+#else
+  if (NULL == (AC_exactz = (double *)malloc (N*sizeof(double)))) {
+    fprintf (stderr, "Out of memory: AC_exactz[]\n");
+    exit (1);
+  }
+#endif
+
+#ifdef USE_TRUNCATE
   if (NULL == (AC_exact = (float *)malloc (tot_AC_exact_count*sizeof(float)))) {
-    fprintf (stderr, "Out of memory: AC_exactz\n");
+    fprintf (stderr, "Out of memory: AC_exact\n");
     exit (1);
   }
 #else
   if (NULL == (AC_exact = (double *)malloc (tot_AC_exact_count*sizeof(double)))) {
-    fprintf (stderr, "Out of memory: AC_exactz\n");
+    fprintf (stderr, "Out of memory: AC_exact[]\n");
     exit (1);
   }
 #endif
@@ -115,7 +126,7 @@ int dctz_decompress (char *a_z, double *a_r)
 //  cur_p += h.AC_exact_count_sz_compressed;
   memcpy (DCz, cur_p, h.DC_sz_compressed);
   cur_p += h.DC_sz_compressed;
-  memcpy (AC_exact, cur_p, h.AC_exact_sz_compressed);
+  memcpy (AC_exactz, cur_p, h.AC_exact_sz_compressed);
 #ifdef USE_QTABLE
   cur_p += h.AC_exact_sz_compressed;
   memcpy (qtable, cur_p, BLK_SZ*sizeof(double));
@@ -150,13 +161,14 @@ int dctz_decompress (char *a_z, double *a_r)
 #endif  
   uLong compSize_binindex = compressBound (ucompSize_binindex);
 
-  uLong ucompSize_DC = nblk*sizeof(float);
+  uLong ucompSize_DC = nblk*sizeof(float); // float or double?
   uLong compSize_DC = compressBound (ucompSize_DC);
 
-  //uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(float);
+  uLong ucompSize_AC_exact = N*sizeof(float); // tot_ac_exact instead of N?
+  uLong compSize_AC_exact = compressBound (ucompSize_AC_exact);
 
   /* setup for decompress */
-  z_stream infstream[2];
+  z_stream infstream[3];
   infstream[0].zalloc = Z_NULL;
   infstream[0].zfree = Z_NULL;
   infstream[0].opaque = Z_NULL;
@@ -205,8 +217,39 @@ int dctz_decompress (char *a_z, double *a_r)
   printf ("uncompressed DC size is: %lu\n", infstream[1].total_out);
 #endif
 
+  /* decompress AC_exact */
+  infstream[2].zalloc = Z_NULL;
+  infstream[2].zfree = Z_NULL;
+  infstream[2].opaque = Z_NULL;
+  
+#ifdef USE_TRUNCATE
+  if (NULL == (AC_exact = (float *)malloc (N*sizeof(float)))) {
+    fprintf (stderr, "Out of memory: AC_exact[]\n");
+    exit (1);
+  }
+#else
+  if (NULL == (AC_exact = (double *)malloc (N*sizeof(double)))) {
+    fprintf (stderr, "Out of memory: AC_exact[]\n");
+    exit (1);
+  }
+#endif
+
+  inflateInit (&infstream[2]);
+
+  infstream[2].avail_in = compSize_AC_exact;
+  infstream[2].next_in = (Bytef *)AC_exactz;
+  infstream[2].avail_out = ucompSize_AC_exact;
+  infstream[2].next_out = (Bytef *)AC_exact;
+
+  inflate (&infstream[2], Z_NO_FLUSH);
+  inflateEnd (&infstream[2]);
+#ifndef DEBUG
+  printf ("uncompressed AC_exact size is: %lu\n", infstream[2].total_out);
+#endif
+
   free (bin_indexz);
   free (DCz);
+  free (AC_exactz);
 
 #ifdef TIME_DEBUG
   gettimeofday (&end_t, NULL);
@@ -246,7 +289,10 @@ int dctz_decompress (char *a_z, double *a_r)
   
   unsigned int pos = 0;
   unsigned int c = N;
-  
+
+  double range_max = error_bound * NBINS;
+  double range_min = -error_bound * NBINS;
+ 
   /* IDCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
     a_xr[i*BLK_SZ] = DC[i]; /* if USE_TRUNCATE, then float -> double */
@@ -267,7 +313,11 @@ int dctz_decompress (char *a_z, double *a_r)
 	else {
 	  a_xr[i*BLK_SZ+j] = bin_center[sbin_id];
 	}
-	a_xr[i*BLK_SZ+j] = a_xr[i*BLK_SZ+j] * qtable[j];	 
+	if (a_xr[i*BLK_SZ+j] > 0) {
+	  a_xr[i*BLK_SZ+j] = ((a_xr[i*BLK_SZ+j] - range_max)/error_bound)*qtable[j];
+	} else {
+	  a_xr[i*BLK_SZ+j] = ((a_xr[i*BLK_SZ+j] - range_min)/error_bound)*qtable[j];
+	}
 #else /* DCT_EC */
 	a_xr[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
 	pos++;

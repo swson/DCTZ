@@ -52,9 +52,9 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   double *bin_maxes, *bin_center, bin_width, range_min, range_max;
   unsigned char *bin_index, *bin_indexz, *bin_indexz2;
 #ifdef USE_TRUNCATE
-  float *DC, *DCz, *DCz2, *AC_exact; //, *AC_exactz, *AC_exactz2;
+  float *DC, *DCz, *DCz2, *AC_exact, *AC_exactz, *AC_exactz2;
 #else
-  double *DC, *DCz, *DCz2, *AC_exact; //, *AC_exactz, *AC_exactz2;
+  double *DC, *DCz, *DCz2, *AC_exact, *AC_exactz, *AC_exactz2;
 #endif
   struct header h;
   struct bstat bs;
@@ -219,7 +219,21 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   memset (AC_exact, 0, sizeof(double)*N); /* TODO: is it necessary? */
 #endif
 
-  int tot_AC_exact_count=0;
+#ifdef USE_TRUNCATE
+  if (NULL == (AC_exactz = (float *)malloc (N*sizeof(float)))) {
+    fprintf (stderr, "Out of memory: AC_exactz[]\n");
+    exit (1);
+  }
+  memset (AC_exactz, 0, sizeof(float)*N); /* TODO: is it necessary? */
+#else
+  if (NULL == (AC_exactz = (double *)malloc (N*sizeof(double)))) {
+    fprintf (stderr, "Out of memory: AC_exactz[]\n");
+    exit (1);
+  }
+  memset (AC_exactz, 0, sizeof(double)*N); /* TODO: is it necessary? */
+#endif
+  
+  int tot_AC_exact_count = 0;
   /* DCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
     dct_fftw (a+i*BLK_SZ, a_x+i*BLK_SZ, BLK_SZ, nblk); // use min(BLK_SZ,)
@@ -263,7 +277,13 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
 #endif 
   }
   dct_finish ();
-  
+
+#ifdef DEBUG
+  FILE *fp = fopen ("dct_result_double.txt", "w+");
+  fwrite (a_x, sizeof(double), N, fp);
+  fclose (fp);
+#endif
+
 #ifdef USE_QTABLE
 #ifdef DEBUG
   printf ("Quantizer Table:\n");
@@ -293,10 +313,15 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
     for (j=1; j<BLK_SZ; j++) {
       unsigned char bin_id;
       bin_id =  bin_index[i*BLK_SZ+j];
-      if (bin_id ==255) { 
+      if (bin_id == 255) { 
 #ifdef USE_QTABLE
         double item = a_x[i*BLK_SZ+j];
-        item = item/qtable[j];   // modify by Quantizer-QT
+        //if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound
+	if (item < range_min) {
+          item = (item/qtable[j])*error_bound + range_min;
+        } else if(item > range_max) {
+          item = (item/qtable[j])*error_bound + range_max;
+        }
       	a_x[i*BLK_SZ+j] = item; // update a_x with updated value
         if (item < range_min || item > range_max) {
 	  bin_id = 255;
@@ -361,6 +386,13 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
 
   gettimeofday (&start_t, NULL);
 #endif
+
+  char zfile1[640];
+  FILE *fp_index;
+  sprintf (zfile1, "bdx.bin"); //, oriFilePath);
+  fp_index = fopen (zfile1, "wb");
+  fwrite (bin_index, N, 1, fp_index);
+  fclose (fp_index);
   
 #ifdef DEBUG
   printf ("tot_AC_exact_count=%d\n", tot_AC_exact_count);
@@ -378,7 +410,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
 #endif
 #endif
 
-  pthread_t thread[2];
+  pthread_t thread[3];
   pthread_attr_t attr;            /* thread attributes (left at defaults) */
 
   /* set defaults (not all pthread implementations default to joinable) */
@@ -386,7 +418,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_JOINABLE);
   
   /* setup for compress */
-  z_stream defstream[2];
+  z_stream defstream[3];
   
   defstream[0].zalloc = Z_NULL;
   defstream[0].zfree = Z_NULL;
@@ -440,15 +472,41 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
     exit (0);
   }
 
+  /* compress AC_exact */
+  defstream[2].zalloc = Z_NULL;
+  defstream[2].zfree = Z_NULL;
+  defstream[2].opaque = Z_NULL;
+  
 #ifdef USE_TRUNCATE
-  uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(float);
+  uLong ucompSize_AC_exact = N*sizeof(float);
+  uLong compSize_AC_exact = compressBound (ucompSize_AC_exact);
+#else
+  uLong ucompSize_AC_exact = N*sizeof(double);
+  uLong compSize_AC_exact = compressBound (ucompSize_AC_exact);
+#endif
+
+  deflateInit2 (&defstream[2], 1, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+
+  defstream[2].avail_in = ucompSize_AC_exact;
+  defstream[2].next_in = (Bytef *)AC_exact;
+  defstream[2].avail_out = compSize_AC_exact;
+  defstream[2].next_out = (Bytef *)AC_exactz;
+  defstream[2].data_type = Z_UNKNOWN;
+
+  if (pthread_create (&thread[2], &attr, compress_thread, (void *)&defstream[2])) {
+    fprintf (stderr, "Error creating thread\n");
+    exit (0);
+  }
+
+#ifdef USE_TRUNCATE
+  //uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(float);
   //  uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
 #else
-  uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(double);
+  //uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(double);
   // uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
 #endif
   void *ret;
-  for (i=0; i<2; i++) {
+  for (i=0; i<3; i++) {
     pthread_join (thread[i], &ret);
 #ifdef DEBUG
     printf ("thread %d joined\n", i);
@@ -460,6 +518,9 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
     case 1:
       compSize_DC = (uLong)ret;
       break;
+    case 2:
+      compSize_AC_exact = (uLong)ret;
+      break;
     }
   }
 
@@ -468,10 +529,10 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   compSize_binindex = defstream[0].total_out; /* update with actual size */
   deflateEnd (&defstream[0]);
 
-  compSize_AC_exact_count = defstream[1].total_out; /* update with actual size */
+  compSize_DC = defstream[1].total_out; /* update with actual size */
   deflateEnd (&defstream[1]);
 
-  compSize_DC = defstream[2].total_out; /* update with actual size */
+  compSize_AC_exact_count = defstream[2].total_out; /* update with actual size */
   deflateEnd (&defstream[2]);
 #endif
 
@@ -484,6 +545,11 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   DCz2 = realloc (DCz, compSize_DC); /* TODO: check error */
 #ifdef SIZE_DEBUG
   printf ("Compressed DC size is: %lu\n", compSize_DC);
+#endif
+
+  AC_exactz2 = realloc (AC_exactz, compSize_AC_exact); /* TODO: check error */
+#ifdef SIZE_DEBUG
+  printf ("Compressed AC_exact size is: %lu\n", compSize_AC_exact);
 #endif
 
 #ifdef TIME_DEBUG
@@ -499,7 +565,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   printf ("comp_time = %f (s), compression rate = %f (MB/s)\n", comp_t/1000000, comp_rate);
 #endif
 
-  *outSize = sizeof(struct header)+compSize_binindex+compSize_DC+ucompSize_AC_exact;
+  *outSize = sizeof(struct header)+compSize_binindex+compSize_DC+compSize_AC_exact;
   
   h.num_elements = N;
   h.error_bound = error_bound;
@@ -507,7 +573,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   h.scaling_factor = SF;
   h.bindex_sz_compressed = compSize_binindex;
   h.DC_sz_compressed = compSize_DC;
-  h.AC_exact_sz_compressed = ucompSize_AC_exact;
+  h.AC_exact_sz_compressed = compSize_AC_exact;
 #ifdef USE_QTABLE
   h.bindex_count = k;
 #endif  
@@ -522,9 +588,9 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   //cur_p += compSize_AC_exact_count;
   memcpy (cur_p, DCz2, compSize_DC);
   cur_p += compSize_DC;
-  memcpy (cur_p, AC_exact, ucompSize_AC_exact);
+  memcpy (cur_p, AC_exactz2, compSize_AC_exact);
 #ifdef USE_QTABLE
-  cur_p += ucompSize_AC_exact;
+  cur_p += compSize_AC_exact;
   memcpy (cur_p, qtable, BLK_SZ*sizeof(double));
 #endif /* USE_QTABLE */
 
@@ -533,7 +599,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   free (bin_center);
   //free(AC_exact_count);
   //free(AC_exact_countz2);
-  free (AC_exact);
+  free (AC_exact); free (AC_exactz2);
   free (bin_index);
   free (bin_indexz2);
 #ifdef USE_QTABLE
