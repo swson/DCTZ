@@ -292,7 +292,7 @@ int dctz_decompress (char *a_z, double *a_r)
 
   double range_max = error_bound * NBINS;
   double range_min = -error_bound * NBINS;
-  double qt_factor = 10.0;
+  double qt_factor = (NBINS == 255 ? 10.0 : 2000.0);
  
   /* IDCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
@@ -304,10 +304,10 @@ int dctz_decompress (char *a_z, double *a_r)
 #ifdef USE_QTABLE
       unsigned short sbin_id;
 #endif
-      if (bin_index[i*BLK_SZ+j] == 255) {
+      if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */
 	sbin_id = bin_index[c++];
-	if (sbin_id == 255) {
+	if (sbin_id == NBINS) {
 	  a_xr[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
 	  pos++;
 	}
