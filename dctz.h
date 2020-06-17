@@ -20,13 +20,14 @@
 #include "zlib.h"
 #include "dct.h"
 
-#define DCTZ_VERSION "0.1.5"
+#define DCTZ_VERSION "0.2.0"
 #define DCTZ_VERSION_MAJOR 0
-#define DCTZ_VERSION_MINOR 1
-#define DCTZ_VERSION_PATCH 5
+#define DCTZ_VERSION_MINOR 2
+#define DCTZ_VERSION_PATCH 0
 
 #define BLK_SZ 64
-#define NBINS 255
+#define NBITS 16 /* # of bits (8 or 16) for representing bin index */
+#define NBINS ((1 << (NBITS)) - 1)
 #define BRSF 1 /* bin range scaling factor: 1: no scaling */
 
 #define my_max(a,b) \
@@ -45,6 +46,11 @@ union buffers {
   float *bf;
   double *bd;
 } bt;
+
+union {
+  unsigned char onebyte;
+  unsigned short twobyte;
+} Bin_Id;
 
 struct bstat {
   double min;

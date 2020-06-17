@@ -29,7 +29,7 @@ int dctz_decompress_float (char *a_z, float *a_r)
 #endif
   float *a_xr, SF;
   double *bin_maxes, *bin_center;
-  unsigned char *bin_index, *bin_indexz;
+  unsigned short *bin_index, *bin_indexz;
   unsigned int tot_AC_exact_count;
   float *DC, *DCz, *AC_exact, *AC_exactz;
   struct header h;
@@ -48,12 +48,12 @@ int dctz_decompress_float (char *a_z, float *a_r)
   SF = h.scaling_factor;
 #ifdef USE_QTABLE
   int K = h.bindex_count;
-  if (NULL == (bin_indexz = (unsigned char *)malloc (K*sizeof(unsigned char)))) {
+  if (NULL == (bin_indexz = (unsigned short *)malloc (K*sizeof(unsigned short)))) {
     fprintf (stderr, "Out of memory: bin_indexz[]\n");
     exit (1);
   }
 #else
-  if (NULL == (bin_indexz = (unsigned char *)malloc (N*sizeof(unsigned char)))) {
+  if (NULL == (bin_indexz = (unsigned short *)malloc (N*sizeof(unsigned short)))) {
     fprintf (stderr, "Out of memory: bin_indexz[]\n");
     exit (1);
   }
@@ -122,14 +122,14 @@ int dctz_decompress_float (char *a_z, float *a_r)
 #endif
 
 #ifdef USE_QTABLE
-  uLong ucompSize_binindex = K*sizeof(unsigned char);
-  if (NULL == (bin_index = (unsigned char *)malloc (K*sizeof(unsigned char)))) {
+  uLong ucompSize_binindex = K*sizeof(unsigned short);
+  if (NULL == (bin_index = (unsigned short *)malloc (K*sizeof(unsigned short)))) {
     fprintf (stderr, "Out of memory: bin_index[]\n");
     exit (1);
   }
 #else  
-  uLong ucompSize_binindex = N*sizeof(unsigned char);
-  if (NULL == (bin_index = (unsigned char *)malloc (N*sizeof(unsigned char)))) {
+  uLong ucompSize_binindex = N*sizeof(unsigned short);
+  if (NULL == (bin_index = (unsigned short *)malloc (N*sizeof(unsigned short)))) {
     fprintf (stderr, "Out of memory: bin_index[]\n");
     exit (1);
   }
@@ -263,7 +263,7 @@ int dctz_decompress_float (char *a_z, float *a_r)
 #endif
     for (j=1; j<BLK_SZ; j++) {
 #ifdef USE_QTABLE
-      unsigned char sbin_id;
+      unsigned short sbin_id;
 #endif          
       if (bin_index[i*BLK_SZ+j] == 255) { 
 #ifdef USE_QTABLE

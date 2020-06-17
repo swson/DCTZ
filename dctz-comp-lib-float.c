@@ -35,7 +35,7 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
   float *a_x;
   double min, max;
   double *bin_maxes, *bin_center, bin_width, range_min, range_max;
-  unsigned char *bin_index, *bin_indexz, *bin_indexz2;
+  unsigned short *bin_index, *bin_indexz, *bin_indexz2;
   float *DC, *DCz, *DCz2, *AC_exact, *AC_exactz, *AC_exactz2;
   struct header h;
   struct bstat bs;
@@ -81,11 +81,11 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
   for (i=0; i<BLK_SZ; i++) {
     qtable[i] = 0.0;
   }
- if (NULL == (bin_index = (unsigned char *)malloc (2*N*sizeof(unsigned char)))) {
-     fprintf (stderr, "Out of memory: bin_index[]\n");
-     exit (1);
- }
- memset (bin_index, 0, sizeof(unsigned char)*2*N);
+  if (NULL == (bin_index = (unsigned short *)malloc (2*N*sizeof(unsigned short)))) {
+    fprintf (stderr, "Out of memory: bin_index[]\n");
+    exit (1);
+  }
+  memset (bin_index, 0, sizeof(unsigned short)*2*N);
 #ifdef DEBUG
   for (i=0; i<BLK_SZ; i++) {
     printf ("qtable[%d] = %e\n", i, qtable[i]);
@@ -93,14 +93,14 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 #endif
   // End of Initialize  Quantizer Table
 #else
- if (NULL == (bin_index = (unsigned char *)malloc(N*sizeof(unsigned char)))) {
-     fprintf (stderr, "Out of memory: bin_index[]\n");
-     exit (1);
- }
- memset (bin_index, 0, sizeof(unsigned char)*N);
-
+  if (NULL == (bin_index = (unsigned short *)malloc(N*sizeof(unsigned short)))) {
+    fprintf (stderr, "Out of memory: bin_index[]\n");
+    exit (1);
+  }
+  memset (bin_index, 0, sizeof(unsigned short)*N);
+  
 #endif /* USE_QTABLE */
-
+  
 #ifdef TIME_DEBUG
   gettimeofday (&start_t, NULL);
   gstart_t = start_t;
@@ -144,11 +144,11 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
   }
   memset (DCz, 0, sizeof(float)*nblk); /* TODO: is it necessary? */
 
-  if (NULL == (bin_indexz = (unsigned char *)malloc(N*sizeof(unsigned char)))) {
+  if (NULL == (bin_indexz = (unsigned short *)malloc(N*sizeof(unsigned short)))) {
     fprintf (stderr, "Out of memory: bin_indexz[]\n");
     exit (1);
   }
-  memset (bin_indexz, 0, sizeof(unsigned char)*N);
+  memset (bin_indexz, 0, sizeof(unsigned short)*N);
 
 #ifdef TIME_DEBUG
   gettimeofday (&end_t, NULL);
@@ -196,13 +196,13 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 #endif
 
     DC[i] = (float)(a_x[i*BLK_SZ]); /* save DC component in truncated*/
-    bin_index[i*BLK_SZ] = 255; /* store as it is */
+    bin_index[i*BLK_SZ] = NBINS; /* store as it is */
 
     for (j=1; j<BLK_SZ; j++) {
       float item = a_x[i*BLK_SZ+j];
-      unsigned char bin_id;
+      unsigned short bin_id;
       if (item < range_min || item > range_max) {
-	bin_id = 255;
+	bin_id = NBINS;
 #ifdef USE_QTABLE
 	/* The Start  of Making Quantizer Table -QT applied to block coefficients  */
       	if (fabs(item) >= qtable[j])
@@ -210,7 +210,7 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 #endif /* USE_QTABLE */
       }      
       else 
-	bin_id = (unsigned char)((item-range_min)/bin_width);
+	bin_id = (unsigned short)((item-range_min)/bin_width);
 #ifdef DEBUG
       printf ("bin_id = %d\n", bin_id);
 #endif
@@ -253,13 +253,13 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 #endif
 
   unsigned int k = N;
-  float qt_factor = 10.0;
+  float qt_factor = (NBINS == 255 ? 10.0 : 2000.0);
  
   for (i=0; i<nblk; i++) {
     for (j=1; j<BLK_SZ; j++) {
-      unsigned char bin_id;
+      unsigned short bin_id;
       bin_id =  bin_index[i*BLK_SZ+j];
-      if (bin_id == 255) {
+      if (bin_id == NBINS) {
 #ifdef USE_QTABLE 
         float item = a_x[i*BLK_SZ+j];
         // if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound
@@ -270,7 +270,7 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 	}
       	a_x[i*BLK_SZ+j] = item; // update a_x with updated value
         if (item < range_min || item > range_max) {
-	  bin_id = 255;
+	  bin_id = NBINS;
 #ifdef USE_TRUNCATE
 	  AC_exact[tot_AC_exact_count++] = (float)(a_x[i*BLK_SZ+j]);
 #else
@@ -278,7 +278,7 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 #endif
 	}
 	else
-	  bin_id = (unsigned char)((item-range_min)/bin_width);
+	  bin_id = (unsigned short)((item-range_min)/bin_width);
         bin_index[k++] = bin_id; 	 
 #ifdef DEBUG
 	printf ("a_x[%d]=%e => %d\n", i*BLK_SZ+j, item, bin_id);
@@ -309,7 +309,7 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
   
 #ifdef DEBUG
   int bin_freq[NBINS+1] = {0};
-  //unsigned char *temp = bin_index;
+  //unsigned short *temp = bin_index;
   i=0;
   while (i < N) {
     bin_freq[(int)bin_index[i++]]++;
@@ -338,9 +338,9 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 #ifndef DEBUG
   printf ("tot_AC_exact_count=%d\n", tot_AC_exact_count);
 #ifdef USE_QTABLE  
-  printf ("bin_index before compression = %lu\n",k*sizeof(unsigned char));
+  printf ("bin_index before compression = %lu\n",k*sizeof(unsigned short));
 #else  
-  printf ("bin_index before compression = %lu\n", N*sizeof(unsigned char));
+  printf ("bin_index before compression = %lu\n", N*sizeof(unsigned short));
 #endif  
 #ifdef USE_TRUNCATE
   printf ("DC before compression = %lu\n", nblk*sizeof(float));
@@ -477,7 +477,7 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
   deflateEnd (&defstream[2]);
 #endif
 
-  bin_indexz2 = (unsigned char*)realloc (bin_indexz, compSize_binindex); /* TODO: check error */
+  bin_indexz2 = (unsigned short*)realloc (bin_indexz, compSize_binindex); /* TODO: check error */
 
 #ifdef SIZE_DEBUG
   printf ("Compressed bin_index size is: %lu\n", compSize_binindex);
