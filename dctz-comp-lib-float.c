@@ -367,9 +367,9 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
 
   /* compress bin_index */
 #ifdef USE_QTABLE
-  uLong ucompSize_binindex = k*sizeof(char);
+  uLong ucompSize_binindex = k*sizeof(unsigned short);
 #else 
-  uLong ucompSize_binindex = N*sizeof(char);
+  uLong ucompSize_binindex = N*sizeof(unsigned short);
 #endif  
   uLong compSize_binindex = compressBound (ucompSize_binindex);
 
