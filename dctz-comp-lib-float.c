@@ -267,7 +267,7 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
           item = (item/qtable[j])*error_bound*qt_factor + range_min;
 	} else if (item > range_max) {
 	  item = (item/qtable[j])*error_bound*qt_factor + range_max;
-	}<
+	}
       	a_x[i*BLK_SZ+j] = item; // update a_x with updated value
         if (item < range_min || item > range_max) {
 	  bin_id = 255;

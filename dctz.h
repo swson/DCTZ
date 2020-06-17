@@ -20,10 +20,10 @@
 #include "zlib.h"
 #include "dct.h"
 
-#define DCTZ_VERSION "0.1.0"
+#define DCTZ_VERSION "0.1.5"
 #define DCTZ_VERSION_MAJOR 0
 #define DCTZ_VERSION_MINOR 1
-#define DCTZ_VERSION_PATCH 0
+#define DCTZ_VERSION_PATCH 5
 
 #define BLK_SZ 64
 #define NBINS 255
