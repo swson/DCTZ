@@ -41,7 +41,7 @@ void *compress_thread (void *arg)
 
 int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bound)
 {
-  int i, j, nblk;
+  int i, j, nblk, rem;
 #ifdef TIME_DEBUG
   struct timeval start_t, end_t, gstart_t;
   double sf_t, dct_t, DC_AC_t, zlib_t, comp_t, malloc_t, genbin_t;
@@ -148,7 +148,8 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
 #endif
   
   // DCT over decomposed blocks
-  nblk = ceil(N/BLK_SZ);
+  nblk = ceili ((double)N/BLK_SZ);
+  rem = N % BLK_SZ;
 #ifdef DEBUG
   printf ("\nnumber of blocks = %d\n", nblk);
 #endif
@@ -236,7 +237,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   int tot_AC_exact_count = 0;
   /* DCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
-    dct_fftw (a+i*BLK_SZ, a_x+i*BLK_SZ, BLK_SZ, nblk); // use min(BLK_SZ,)
+    dct_fftw (a+i*BLK_SZ, a_x+i*BLK_SZ, ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, nblk);
 #ifdef DEBUG
     printf ("block %d: after DCT:\n", i);
     for (j=0; j<BLK_SZ && (i<3); j++){ // show the first block only

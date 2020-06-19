@@ -36,3 +36,11 @@ void calc_data_stat_f (float *in, struct bstat *bs, int N)
     if (fabs (in[i]) < bs->min) bs->min = fabs (in[i]);
   }
 }
+
+int ceili (double d)
+{
+  int i = (int) d;
+  if (d == (double)i)
+    return i;
+  return i + 1;
+}

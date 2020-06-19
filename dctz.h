@@ -30,12 +30,12 @@
 #define NBINS ((1 << (NBITS)) - 1)
 #define BRSF 1 /* bin range scaling factor: 1: no scaling */
 
-#define my_max(a,b) \
+#define MAX(a,b) \
   ({ __typeof__ (a) _a = (a); \
   __typeof__ (b) _b = (b); \
   _a > _b ? _a : _b; })
 
-#define my_min(a,b) \
+#define MIN(a,b) \
   ({ __typeof__ (a) _a = (a); \
   __typeof__ (b) _b = (b); \
   _a < _b ? _a : _b; })
@@ -76,6 +76,7 @@ struct header
 
 void calc_data_stat (double *in, struct bstat *bs, int N);
 void calc_data_stat_f (float *in, struct bstat *bs, int N);
+int ceili (double i);
 void gen_bins (double min, double max, double *bin_maxes, double *bin_center, int nbins, double error_bound);
 void *compress_thread (void *arg);
 int dctz_compress (double *d, int N, size_t *outSize, char *a_z, double error_bound);

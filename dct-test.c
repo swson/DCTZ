@@ -24,7 +24,7 @@ int main (int argc, char * argv[])
   double *d, *d_x;
   float *f, *f_x;
   int datatype;
-  int N, i, nblk;;
+  int N, i, nblk, rem;
   
   if (argc < 4) {
     printf ("Test case: %s -d|-f [srcFilePath] [dimension sizes...]\n", argv[0]);
@@ -53,7 +53,9 @@ int main (int argc, char * argv[])
   
   printf ("total number = %d\n", N);
 
-  nblk = ceil(N/BLK_SZ);
+  nblk = ceili ((double)N/BLK_SZ);;
+  rem = N % BLK_SZ;
+  printf ("nblk=%d, rem=%d\n", nblk, rem);
 
   sprintf (oriFilePath, "%s", argv[2]);
   
@@ -79,7 +81,7 @@ int main (int argc, char * argv[])
     fread (d, typesize, N, fp_in);
     dct_init (BLK_SZ);
     for (i=0; i<nblk; i++)
-      dct_fftw (d+i*BLK_SZ, d_x+i*BLK_SZ, BLK_SZ, nblk); // use min(BLK_SZ,)
+      dct_fftw (d+i*BLK_SZ, d_x+i*BLK_SZ, ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, nblk); 
   } 
   else { /* float */
     typesize = sizeof (float);
@@ -95,7 +97,7 @@ int main (int argc, char * argv[])
     fread (f, typesize, N, fp_in);
     dct_init_f (BLK_SZ);
     for (i=0; i<nblk; i++)
-      dct_fftw_f (f+i*BLK_SZ, f_x+i*BLK_SZ, BLK_SZ, nblk); // use min(BLK_SZ,)
+      dct_fftw_f (f+i*BLK_SZ, f_x+i*BLK_SZ, ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, nblk);
   }	  
   
   fclose (fp_in);

@@ -22,7 +22,7 @@
 
 int dctz_decompress_float (char *a_z, float *a_r)
 {
-  int N, i, j, nblk;
+  int N, i, j, nblk, rem;
 #ifdef TIME_DEBUG
   struct timeval start_t, end_t, gstart_t; /* for measuring timing */
   double sf_t, zlib_t, idct_t, decomp_t, malloc_t, genbin_t;
@@ -43,7 +43,8 @@ int dctz_decompress_float (char *a_z, float *a_r)
   cur_p = a_z + sizeof(struct header);
   N = h.num_elements;
   error_bound = h.error_bound;
-  nblk = ceil(N/BLK_SZ);
+  nblk = ceili ((double)N/BLK_SZ);
+  rem = N % BLK_SZ;
   tot_AC_exact_count = h.tot_AC_exact_count;
   SF = h.scaling_factor;
 #ifdef USE_QTABLE
@@ -220,7 +221,7 @@ int dctz_decompress_float (char *a_z, float *a_r)
 #endif
 
   /* restore AC_exact */
-  nblk = ceil(h.num_elements/BLK_SZ);
+  nblk = ceili ((double)h.num_elements/BLK_SZ);
    
   if (NULL == (bin_maxes = (double *)malloc (NBINS*sizeof(double)))) {
     fprintf (stderr, "Out of memory: bin_maxes\n");
@@ -293,7 +294,7 @@ int dctz_decompress_float (char *a_z, float *a_r)
 #endif
     }
 
-    ifft_idct_f (BLK_SZ, a_xr+i*BLK_SZ, a_r+i*BLK_SZ);
+    ifft_idct_f (((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, a_xr+i*BLK_SZ, a_r+i*BLK_SZ);
 
 #ifdef DEBUG
     printf ("block %d: after IDCT:\n", i);
