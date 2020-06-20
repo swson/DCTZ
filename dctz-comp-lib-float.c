@@ -187,7 +187,8 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
   int tot_AC_exact_count = 0;
   /* DCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
-    dct_fftw_f (a+i*BLK_SZ, a_x+i*BLK_SZ, ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, nblk);
+    int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
+    dct_fftw_f (a+i*BLK_SZ, a_x+i*BLK_SZ, l_blk_sz, nblk);
 #ifdef DEBUG
     printf ("block %d: after DCT:\n", i);
     for (j=0; j<BLK_SZ && (i<3); j++){ // show the first block only

@@ -297,11 +297,12 @@ int dctz_decompress (char *a_z, double *a_r)
  
   /* IDCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
+    int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
     a_xr[i*BLK_SZ] = DC[i]; /* if USE_TRUNCATE, then float -> double */
 #ifdef DEBUG
     printf ("a_xr[%d]=%e\n", i*BLK_SZ, a_xr[i*BLK_SZ]);
 #endif
-    for (j=1; j<BLK_SZ; j++) {
+    for (j=1; j<l_blk_sz; j++) {
 #ifdef USE_QTABLE
       unsigned short sbin_id;
 #endif
@@ -333,7 +334,7 @@ int dctz_decompress (char *a_z, double *a_r)
 #endif
     }
     
-    ifft_idct (((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, a_xr+i*BLK_SZ, a_r+i*BLK_SZ);
+    ifft_idct (l_blk_sz, a_xr+i*BLK_SZ, a_r+i*BLK_SZ);
 
 #ifdef DEBUG
     printf ("block %d: after IDCT:\n", i);

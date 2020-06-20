@@ -151,7 +151,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   nblk = ceili ((double)N/BLK_SZ);
   rem = N % BLK_SZ;
 #ifdef DEBUG
-  printf ("\nnumber of blocks = %d\n", nblk);
+  printf ("\nnumber of blocks = %d, remainder = %d\n", nblk, rem);
 #endif
 
 #ifdef USE_TRUNCATE
@@ -237,7 +237,8 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   int tot_AC_exact_count = 0;
   /* DCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
-    dct_fftw (a+i*BLK_SZ, a_x+i*BLK_SZ, ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, nblk);
+    int l_blk_sz = ((i==nblk-1)&&(rem!=0))?rem:BLK_SZ;
+    dct_fftw (a+i*BLK_SZ, a_x+i*BLK_SZ, l_blk_sz, nblk);
 #ifdef DEBUG
     printf ("block %d: after DCT:\n", i);
     for (j=0; j<BLK_SZ && (i<3); j++){ // show the first block only
@@ -255,7 +256,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
 
     double item;   
     unsigned short bin_id;
-    for (j=1; j<BLK_SZ; j++) {
+    for (j=1; j<l_blk_sz; j++) {
       item = a_x[i*BLK_SZ+j];
       if (item < range_min || item > range_max) {
 	bin_id = NBINS;
