@@ -37,7 +37,7 @@ void calc_data_stat_f (float *in, struct bstat *bs, int N)
   }
 }
 
-int ceili (double d)
+int iceil (double d)
 {
   int i = (int) d;
   if (d == (double)i)

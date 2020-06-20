@@ -148,7 +148,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
 #endif
   
   // DCT over decomposed blocks
-  nblk = ceili ((double)N/BLK_SZ);
+  nblk = CEIL(N, BLK_SZ);
   rem = N % BLK_SZ;
 #ifdef DEBUG
   printf ("\nnumber of blocks = %d, remainder = %d\n", nblk, rem);

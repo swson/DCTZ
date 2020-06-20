@@ -40,6 +40,8 @@
   __typeof__ (b) _b = (b); \
   _a < _b ? _a : _b; })
 
+#define CEIL(a,b) (a+b-1)/b
+
 enum dtype {data_type_double, data_type_float};
 
 union buffers {

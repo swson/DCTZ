@@ -47,7 +47,7 @@ int dctz_decompress (char *a_z, double *a_r)
   cur_p = a_z + sizeof(struct header);
   N = h.num_elements;
   error_bound = h.error_bound;
-  nblk = ceili ((double)N/BLK_SZ);
+  nblk = CEIL(N, BLK_SZ);
   rem = N % BLK_SZ;
   tot_AC_exact_count = h.tot_AC_exact_count;
   SF = h.scaling_factor;
@@ -260,7 +260,7 @@ int dctz_decompress (char *a_z, double *a_r)
 #endif
   
   /* restore AC_exact */
-  nblk = ceili ((double)h.num_elements/BLK_SZ);
+  nblk = CEIL(h.num_elements, BLK_SZ);
  
   if (NULL == (bin_maxes = (double *)malloc (NBINS*sizeof(double)))) {
     fprintf (stderr, "Out of memory: bin_maxes\n");
