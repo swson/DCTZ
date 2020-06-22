@@ -255,7 +255,9 @@ int dctz_decompress_float (char *a_z, float *a_r)
   double range_max = error_bound * NBINS;
   double range_min = -error_bound * NBINS;
   float qt_factor = (NBINS == 255 ? 10.0 : 2000.0);
- 
+
+  dct_init_f (BLK_SZ);
+  
   /* IDCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
     int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;

@@ -234,6 +234,8 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   memset (AC_exactz, 0, sizeof(double)*N); /* TODO: is it necessary? */
 #endif
   
+  dct_init (BLK_SZ);
+
   int tot_AC_exact_count = 0;
   /* DCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk

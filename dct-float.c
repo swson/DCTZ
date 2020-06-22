@@ -106,6 +106,7 @@ void dct_fftw_f (float *a, float *b, int dn,  int nblk)
 }
 
 void dct_finish_f () {
+  flag = 0;
   fftwf_free (in);
   fftwf_free (out);
   free (as);
@@ -208,6 +209,7 @@ void ifft_idct_f (int dn, float *a,  float *data)
 
 void idct_finish_f ()
 {
+  flag = 0;
   fftwf_free (in);
   fftwf_free (out);
   free (iax);

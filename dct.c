@@ -33,21 +33,21 @@ void dct_init (int dn) /* dn: block size, 64 default */
   double x = 0.0;
   double y;
   
-  //Compute weights to multiply DFT coefficients
+  // Compute weights to multiply DFT coefficients
   for (i=0; i<dn; i++) {
     y = -i*M_PI/(2*dn);
     as[i] = exp(x)*cos(y)/sqrt(2.0*dn);
     ax[i] = exp(x)*sin(y)/sqrt(2.0*dn);
   }
   as[0] = as[0]/sqrt(2.0);
-  if (!(dn%2)) {
+  if (!(dn%2)) { /* even */
     for (i=0; i<dn; i++) {
       as[i] = as[i]*2;
       ax[i] = ax[i]*2;
     }
     p = fftw_plan_dft_1d (dn, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
   }
-  else {
+  else { /* odd */
     p = fftw_plan_dft_1d (2*dn, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
   }  
 }
@@ -106,10 +106,12 @@ void dct_fftw (double *a, double *b, int dn, int nblk)
 }
 
 void dct_finish() {
+  flag = 0;
   fftw_free (in);
   fftw_free (out);
   free (as);
   free (ax);
+  fftw_cleanup ();
   fftw_destroy_plan (p);
 }
 
@@ -118,7 +120,7 @@ void ifft_idct (int dn, double *a,  double *data)
   int i, j, k;
   double ias_0;
 
-  if (flag == 0) {
+  if (flag == 0) { /* 1st time running: not initialized */
     in = (fftw_complex *) fftw_malloc (sizeof(fftw_complex) * 2*dn); //IFFT input
     out = (fftw_complex *) fftw_malloc (sizeof(fftw_complex) * 2*dn);//IFFT output
     ias = (double *)malloc (dn*sizeof(double));
@@ -127,7 +129,7 @@ void ifft_idct (int dn, double *a,  double *data)
     double x = 0.0;
     double y;
 
-    //Compute weights to multiply IDFT coefficients
+    // Compute weights to multiply IDFT coefficients
     for (i = 0; i < dn; i++) {
       y = i*M_PI/(2*dn);
       ias[i] = exp(x)*cos(y)*sqrt(2.0*dn);
@@ -217,8 +219,10 @@ void idct_fftw (void *a, void *b, int dn, int blk_i, int nblk, int datatype)
   } 
 }
 
+/* same as dct_finish? */
 void idct_finish ()
 {
+  flag = 0;
   fftw_free (in);
   fftw_free (out);
   free (iax);

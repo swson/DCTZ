@@ -139,7 +139,6 @@ int main (int argc, char * argv[])
       perror ("Error reading file");
       exit (EXIT_FAILURE);
     }
-    dct_init (BLK_SZ);
 #ifdef WITH_Z_CHECKER
     dataProperty = ZC_startCmpr (varName, ZC_DOUBLE, d, r5, r4, r3, r2, r1);
 #endif /* WITH_Z_CHECKER */
@@ -165,7 +164,6 @@ int main (int argc, char * argv[])
       perror ("Error reading file");
       exit (EXIT_FAILURE);
     }
-    dct_init_f (BLK_SZ);
 #ifdef WITH_Z_CHECKER
     dataProperty = ZC_startCmpr (varName, ZC_FLOAT, f, r5, r4, r3, r2, r1);
 #endif /* WITH_Z_CHECKER */
@@ -173,7 +171,6 @@ int main (int argc, char * argv[])
   }	  
   printf ("oriFilePath = %s, outputFilePath = %s, datatype = %s error = %s, dim1 = %zu dim2 = %zu dim3 = %zu dim4 = %zu\n", oriFilePath, outputFilePath, datatype==0?"double":"float", argv[2], r1, r2, r3, r4);
   printf ("outsize = %zu\n", outSize);
-  
 #ifdef WITH_Z_CHECKER
   compareResult = ZC_endCmpr (dataProperty, solName, outSize);
 #endif /* WITH_Z_CHECKER */

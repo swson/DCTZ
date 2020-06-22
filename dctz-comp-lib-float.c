@@ -184,6 +184,8 @@ int dctz_compress_float (float *a, int N, size_t *outSize, char *a_z, double err
   }
   memset (AC_exactz, 0, sizeof(float)*N); /* TODO: is it necessary? */
 
+  dct_init_f (BLK_SZ);
+  
   int tot_AC_exact_count = 0;
   /* DCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
