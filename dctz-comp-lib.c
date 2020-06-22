@@ -238,6 +238,10 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   /* DCT block decomposed */
   for (i=0; i<nblk; i++) { // for each decomposed blk
     int l_blk_sz = ((i==nblk-1)&&(rem!=0))?rem:BLK_SZ;
+    if ((i==nblk-1) && (rem!=0)) {
+      dct_finish ();
+      dct_init (rem);
+    }
     dct_fftw (a+i*BLK_SZ, a_x+i*BLK_SZ, l_blk_sz, nblk);
 #ifdef DEBUG
     printf ("block %d: after DCT:\n", i);

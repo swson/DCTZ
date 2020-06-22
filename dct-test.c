@@ -53,7 +53,7 @@ int main (int argc, char * argv[])
   
   printf ("total number = %d\n", N);
 
-  nblk = ceili ((double)N/BLK_SZ);;
+  nblk = CEIL(N, BLK_SZ);
   rem = N % BLK_SZ;
   printf ("nblk=%d, rem=%d\n", nblk, rem);
 
@@ -80,8 +80,15 @@ int main (int argc, char * argv[])
     }
     fread (d, typesize, N, fp_in);
     dct_init (BLK_SZ);
-    for (i=0; i<nblk; i++)
-      dct_fftw (d+i*BLK_SZ, d_x+i*BLK_SZ, ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, nblk); 
+    for (i=0; i<nblk; i++) {
+      int l_blk_sz = ((i==nblk-1)&&(rem!=0))?rem:BLK_SZ;
+      if ((i==nblk-1)&&(rem!=0)) {
+	dct_finish ();
+	dct_init (rem);
+      }
+      dct_fftw (d+i*BLK_SZ, d_x+i*BLK_SZ, l_blk_sz, nblk);
+    }
+    dct_finish ();
   } 
   else { /* float */
     typesize = sizeof (float);
@@ -96,8 +103,15 @@ int main (int argc, char * argv[])
     }
     fread (f, typesize, N, fp_in);
     dct_init_f (BLK_SZ);
-    for (i=0; i<nblk; i++)
-      dct_fftw_f (f+i*BLK_SZ, f_x+i*BLK_SZ, ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ, nblk);
+    for (i=0; i<nblk; i++) {
+      int l_blk_sz = ((i==nblk-1)&&(rem!=0))?rem:BLK_SZ;
+      if ((i==nblk-1)&&(rem!=0)) {
+	dct_finish_f ();
+	dct_init_f (rem);
+      }
+      dct_fftw_f (f+i*BLK_SZ, f_x+i*BLK_SZ, l_blk_sz, nblk);
+    }
+    dct_finish_f ();
   }	  
   
   fclose (fp_in);

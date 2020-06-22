@@ -333,7 +333,11 @@ int dctz_decompress (char *a_z, double *a_r)
       printf ("after a_xr[%d]=%e\n", i*BLK_SZ+j, a_xr[i*BLK_SZ]+j);
 #endif
     }
-    
+
+    if ((i==nblk-1) && (rem!=0)) {
+      dct_finish ();
+      dct_init (rem);
+    }
     ifft_idct (l_blk_sz, a_xr+i*BLK_SZ, a_r+i*BLK_SZ);
 
 #ifdef DEBUG

@@ -295,6 +295,10 @@ int dctz_decompress_float (char *a_z, float *a_r)
 #endif
     }
 
+    if ((i==nblk-1) && (rem!=0)) {
+      dct_finish_f ();
+      dct_init_f (rem);
+    }
     ifft_idct_f (l_blk_sz, a_xr+i*BLK_SZ, a_r+i*BLK_SZ);
 
 #ifdef DEBUG
