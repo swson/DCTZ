@@ -313,7 +313,8 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   double qt_factor = (NBINS == 255 ? 10.0 : 2000.0);
   
   for (i=0; i<nblk; i++) {
-    for (j=1; j<BLK_SZ; j++) {
+    int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
+    for (j=1; j<l_blk_sz; j++) {
       unsigned short bin_id;
       bin_id =  bin_index[i*BLK_SZ+j];
       if (bin_id == NBINS) { 
