@@ -21,7 +21,7 @@ void calc_data_stat (double *in, struct bstat *bs, int N)
     if (fabs (in[i]) < bs->min) bs->min = fabs (in[i]);
   }
 
-  bs->sf = ceil(log10(bs->max));
+  bs->sf = ceil (log10 (bs->max));
 }
 
 void calc_data_stat_f (float *in, struct bstat *bs, int N)
@@ -35,6 +35,8 @@ void calc_data_stat_f (float *in, struct bstat *bs, int N)
     if (fabs (in[i]) > bs->max) bs->max = fabs (in[i]);
     if (fabs (in[i]) < bs->min) bs->min = fabs (in[i]);
   }
+
+  bs->sf = ceil (log10 (bs->max));
 }
 
 int iceil (double d)

@@ -46,7 +46,7 @@ int dctz_compress (double *a, int N, size_t *outSize, char *a_z, double error_bo
   struct timeval start_t, end_t, gstart_t;
   double sf_t, dct_t, DC_AC_t, zlib_t, comp_t, malloc_t, genbin_t;
 #endif
-  float SF;
+  double SF;
   double min, max;
   double *a_x; /* buffer to store transformed coefficients */
   double *bin_maxes, *bin_center, bin_width, range_min, range_max;
