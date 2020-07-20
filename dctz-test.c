@@ -50,7 +50,7 @@ int main (int argc, char * argv[])
   }
   
   error_bound = atof (argv[2]);
-  varName=argv[3];
+  varName = argv[3];
 
   assert (argc >= 6);
 
@@ -175,32 +175,6 @@ int main (int argc, char * argv[])
   compareResult = ZC_endCmpr (dataProperty, solName, outSize);
 #endif /* WITH_Z_CHECKER */
   
-  struct header h;
-  
-  memcpy (&h, a_z, sizeof(struct header));
-  double SF = h.scaling_factor;
-  
-#ifdef DEBUG
-  printf ("SF = %f\n", SF);
-#endif /* DEBUG */ 
-  // deapply scaling factor to the original data
-  double xscale = pow (10, SF-1);
-  if (SF != 1.0)
-#ifdef _OPENMP
-#pragma omp parallel for private(i) shared(a, SF)
-#endif
-    for (int i=0; i<N; i++) {
-      if (datatype == data_type_double) 
-	d[i] *= xscale; 
-      else 
-	f[i] *= xscale;
-    }
-#ifdef DEBUG
-  for (int i=0; i<BLK_SZ; i++) { // show the first block
-    printf ("d[%d] = %e %p\n", i, d[i], &d[i]);
-    if (i%BLK_SZ == 0 && i != 0) printf ("\n");
-  }
-#endif
   fclose (fp_in);
   
   char zfile[640];
