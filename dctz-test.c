@@ -25,11 +25,11 @@ int main (int argc, char * argv[])
 #endif
   char *varName; 
   double error_bound;
-  void *a_r;
+  void *a_r; /* buffer for reconstructed data */
   double *d;
   float *f;
-  int datatype;
-  char *a_z;
+  int datatype; /* double or float */
+  char *a_z; /* buffer for compressed data */
   int N, min_argc;
 
 #ifdef WITH_Z_CHECKER
@@ -39,7 +39,7 @@ int main (int argc, char * argv[])
 #endif
   
   if (argc < min_argc) {
-#ifdef WITH_Z_CHECKR
+#ifdef WITH_Z_CHECKER
     printf ("Test case: %s -d|-f [err bound] [var name] [srcFilePath] [dimension sizes...] solName \n", argv[0]);
     printf ("Example: %s -d 1E-3 sedov testdata/x86/testfloat_8_8_128.dat 8 8 128 dctz-ec(1E-3) \n", argv[0]);
 #else
@@ -174,6 +174,35 @@ int main (int argc, char * argv[])
 #ifdef WITH_Z_CHECKER
   compareResult = ZC_endCmpr (dataProperty, solName, outSize);
 #endif /* WITH_Z_CHECKER */
+
+#ifdef WITH_Z_CHECKER
+  struct header h;
+
+  memcpy (&h, a_z, sizeof(struct header));
+  double SF = h.scaling_factor;
+
+#ifdef DEBUG
+  printf ("SF = %f\n", SF);
+#endif /* DEBUG */ 
+  // deapply scaling factor to the original data
+  double xscale = pow (10, SF-1);
+  if (SF != 1.0)
+#ifdef _OPENMP
+#pragma omp parallel for private(i) shared(a, SF)
+#endif
+    for (int i=0; i<N; i++) {
+      if (datatype == data_type_double) 
+	d[i] *= xscale; 
+      else 
+	f[i] *= xscale;
+    }
+#ifdef DEBUG
+  for (int i=0; i<BLK_SZ; i++) { // show the first block
+    printf ("d[%d] = %e %p\n", i, d[i], &d[i]);
+    if (i%BLK_SZ == 0 && i != 0) printf ("\n");
+  }
+#endif
+#endif /* WITH_Z_CHECKER */
   
   fclose (fp_in);
   
@@ -233,6 +262,10 @@ int main (int argc, char * argv[])
 #endif /* WITH_Z_CHECKER */
   free (a_z);
   free (a_r);
+  if (datatype == data_type_double)
+    free (d);
+  else /* float */
+    free (f);
   printf ("done\n");
 
 #ifdef WITH_Z_CHECKER
