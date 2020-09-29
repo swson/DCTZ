@@ -49,6 +49,11 @@ To test DCTZ with the state-of-the-art lossy compressors, SZ and zfp, use the Z-
 1. Install Z-checker-installer, which can be cloned or downloaded from
 [Z-checker-installer](http://github.com/CODARcode/z-checker-installer).
 
+After installing z-checker-installer, add the installed zfp's library path to LD_LIBRARY_PATH.
+```
+$ export LD_LIBRARY_PATH=${ZC_INSTALL_HOME}/zfp/zfp-install/lib:$LD_LIBRARY_PATH
+```
+
 2. Copy the compiled DCTZ test binaries to `{ZC_INSTALL_HOME}/DCTZ`.
 ```
 $ mkdir ${ZC_INSTALL_HOME}/DCTZ
