@@ -60,8 +60,8 @@ Note that `$ZC_INSTALL_HOME` is not same as `$ZC_INSTALL_DIR`. Typically, `$ZC_I
 
 3. Add the DCTZ configuration files to Z-Checker.
 ```
-$ cp zc_patches/manageCompressor-dctz-ec.cfg ${ZC_INSTALL_HOME}/.
-$ cp zc_patches/manageCompressor-dctz-qt.cfg ${ZC_INSTALL_HOME}/.
+$ cp zc-patches/manageCompressor-dctz-ec.cfg ${ZC_INSTALL_HOME}/.
+$ cp zc-patches/manageCompressor-dctz-qt.cfg ${ZC_INSTALL_HOME}/.
 ```
 
 Modify the `${ZC_INSTALL_HOME}` variable in `manageCompressor-dctz-ec.cfg` and `manageCompressor-dctz-qt.cfg`, and execute the following commands:
@@ -78,7 +78,7 @@ Then, open `errBounds.cfg` under `${ZC_INSTALL_HOME}` and modify the error bound
 
 5. Modify listing files for all the test data.
 ```
-$ cp zc_patches/varInfo.txt ${ZC_INSTALL_HOME}/.
+$ cp zc-patches/varInfo.txt ${ZC_INSTALL_HOME}/.
 ```
 
 Change file paths in `varInfo.txt` to use test data (`$ cd tests, $ unzip dctz-test-data.zip`).
