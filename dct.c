@@ -112,7 +112,7 @@ void dct_finish() {
   fftw_free (out);
   free (as);
   free (ax);
-  fftw_cleanup ();
+  //fftw_cleanup ();
 }
 
 void ifft_idct (int dn, double *a,  double *data)
@@ -228,5 +228,5 @@ void idct_finish ()
   fftw_free (out);
   free (iax);
   free (ias);
-  fftw_cleanup ();
+  //fftw_cleanup ();
 }
