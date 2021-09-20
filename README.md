@@ -19,10 +19,10 @@ DCTZ requires the following libraries to build:
   $ cd fftw-3.3.10
   $ ./configure  ### this will configure double-precision library
   $ make 
-  $ make install
-  $ ./configure --enable-float   ## this will configure single-precision library
+  $ make install  ## this line requires sudo
+  $ make clean && ./configure --enable-float   ## this will configure single-precision library
   $ make
-  $ make install
+  $ make install  ## this line requires sudo
   ````
   - Ubuntu only:  If you want to install FFTW3 in your local Ubuntu, simply run:
   ````
