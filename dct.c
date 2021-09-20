@@ -102,17 +102,17 @@ void dct_fftw (double *a, double *b, int dn, int nblk)
     b[i] = as[i]*out[i][0] - ax[i]*out[i][1];
   }
 
-  fftw_cleanup ();
+  //fftw_cleanup ();
 }
 
 void dct_finish() {
   flag = 0;
+  fftw_destroy_plan (p);
   fftw_free (in);
   fftw_free (out);
   free (as);
   free (ax);
   fftw_cleanup ();
-  fftw_destroy_plan (p);
 }
 
 void ifft_idct (int dn, double *a,  double *data)
@@ -223,9 +223,10 @@ void idct_fftw (void *a, void *b, int dn, int blk_i, int nblk, int datatype)
 void idct_finish ()
 {
   flag = 0;
+  fftw_destroy_plan (p);
   fftw_free (in);
   fftw_free (out);
   free (iax);
   free (ias);
-  fftw_destroy_plan (p);
+  fftw_cleanup ();
 }
