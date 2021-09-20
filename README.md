@@ -12,12 +12,15 @@ International Conference on Massive Storage Systems and Technology (MSST), May 2
 
 DCTZ requires the following libraries to build:
 - [FFTW](http://www.fftw.org/): DCT (including inverse DCT) routines in DCTZ are currently based on Fourier transform (DFT) routines in FFTW.
-  - When you install FFTW from the source, enable single-precision during configuration using `--enable-float`:
+  - When you install FFTW from the source, enable single-precision during configuration using `--enable-float` separately:
   ````
   $ wget http://www.fftw.org/fftw-3.3.10.tar.gz
   $ tar -zxvf fftw-3.3.10.tar.gz
   $ cd fftw-3.3.10
-  $ ./configure --enable-float
+  $ ./configure  ### this will configure double-precision library
+  $ make 
+  $ make install
+  $ ./configure --enable-float   ## this will configure single-precision library
   $ make
   $ make install
   ````
