@@ -71,7 +71,7 @@ void dct_fftw (double *a, double *b, int dn, int nblk)
 #endif
     fftw_execute (p); /* repeat as needed*/
 
-  } else { /*  for even */
+  } else { /* for even */
     memset (in, 0, sizeof(fftw_complex)*2*dn);
     for (i=0, j=0, k=dn-1; i<dn; i++) {
       if (i%2) {
@@ -121,8 +121,8 @@ void ifft_idct (int dn, double *a,  double *data)
   double ias_0;
 
   if (flag == 0) { /* 1st time running: not initialized */
-    in = (fftw_complex *) fftw_malloc (sizeof(fftw_complex) * 2*dn); //IFFT input
-    out = (fftw_complex *) fftw_malloc (sizeof(fftw_complex) * 2*dn);//IFFT output
+    in = (fftw_complex *) fftw_malloc (sizeof(fftw_complex) * 2*dn); // IFFT input
+    out = (fftw_complex *) fftw_malloc (sizeof(fftw_complex) * 2*dn); // IFFT output
     ias = (double *)malloc (dn*sizeof(double));
     iax = (double *)malloc (dn*sizeof(double));
 
@@ -149,11 +149,11 @@ void ifft_idct (int dn, double *a,  double *data)
     in[0][0] = ias_0*a[0];
     in[0][1] = iax[0]*a[0];
 
-    for(i = 1; i < dn; i++){
+    for(i = 1; i < dn; i++) {
       in[i][0] = ias[i]*a[i];
       in[i][1] = iax[i]*a[i];
       in[dn+i][0] = iax[i]*a[dn-i];
-      in[dn+i][i] = -ias[i]*a[dn-i];
+      in[dn+i][1] = -ias[i]*a[dn-i];
     }
 
     if (flag == 0) {
@@ -163,7 +163,7 @@ void ifft_idct (int dn, double *a,  double *data)
     fftw_execute (p); /* repeat as needed*/
     
     for (i=0; i<dn; i++) {
-      data[i] = out[i][0] / dn/2;
+      data[i] = out[i][0] / dn / 2;
     }
   } else { /* for even */
     ias_0 = ias[0] / sqrt(2.0);
