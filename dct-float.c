@@ -121,6 +121,7 @@ void ifft_idct_f (int dn, float *a,  float *data)
   float ias_0;
 
   size_t typesize = sizeof(float);
+
   if (flag == 0) {
     in = (fftwf_complex *) fftwf_malloc (sizeof(fftwf_complex) * 2*dn); //IFFT input
     out = (fftwf_complex *) fftwf_malloc (sizeof(fftwf_complex) * 2*dn); //IFFT output
@@ -130,7 +131,7 @@ void ifft_idct_f (int dn, float *a,  float *data)
     float x = 0.0;
     float y;
 
-    //Compute weights to multiply IDFT coefficients
+    // Compute weights to multiply IDFT coefficients
     for (i = 0; i < dn; i++) {
       y = i*M_PI/(2*dn);
       ias[i] = exp(x)*cos(y)*sqrt(2.0*dn);
@@ -150,11 +151,11 @@ void ifft_idct_f (int dn, float *a,  float *data)
     in[0][0] = ias_0*a[0];
     in[0][1] = iax[0]*a[0];
 
-    for(i = 1; i < dn; i++){
+    for(i = 1; i < dn; i++) {
       in[i][0] = ias[i]*a[i];
       in[i][1] = iax[i]*a[i];
       in[dn+i][0] = iax[i]*a[dn-i];
-      in[dn+i][i] = -ias[i]*a[dn-i];
+      in[dn+i][1] = -ias[i]*a[dn-i];
     }
 
     if (flag == 0) {
@@ -164,7 +165,7 @@ void ifft_idct_f (int dn, float *a,  float *data)
     fftwf_execute (p); /* repeat as needed*/
     
     for (i=0; i<dn; i++) {
-      data[i] = out[i][0] / dn/2;
+      data[i] = out[i][0] / dn / 2;
     }
   } else { /* for even */
     ias_0 = ias[0] / sqrt(2.0);
