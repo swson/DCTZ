@@ -348,6 +348,9 @@ int dctz_decompress_float (char *a_z, float *a_r)
   free (bin_index);
   free (bin_maxes);
   free (bin_center);
+#ifdef USE_QTABLE
+  free (qtable);
+#endif /* USE_QTABLE */
 
   return (1);
 }

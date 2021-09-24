@@ -388,6 +388,9 @@ int dctz_decompress (char *a_z, double *a_r)
   free (bin_index);
   free (bin_maxes);
   free (bin_center);
+#ifdef USE_QTABLE
+  free (qtable);
+#endif /* USE_QTABLE */
 
   return (1);
 }
