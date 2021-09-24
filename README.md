@@ -7,6 +7,17 @@ Jialing Zhang, Xiaoyan Zhuo, Aekyeung Moon, Hang Liu, Seung Woo Son
 "Efficient Encoding and Reconstruction of HPC Datasets for Checkpoint/Restart"
 International Conference on Massive Storage Systems and Technology (MSST), May 2019.
 ````
+BibTeX citation entry:
+````
+@INPROCEEDINGS{DCTZ-MSST19,  
+  author    = {Zhang, Jialing and Zhuo, Xiaoyan and Moon, Aekyeung and Liu, Hang and Son, Seung Woo},  
+  booktitle = {2019 35th Symposium on Mass Storage Systems and Technologies (MSST)},   
+  title     = {{Efficient Encoding and Reconstruction of HPC Datasets for Checkpoint/Restart}},   
+  year      = {2019},  
+  pages     = {79-91},  
+  doi       = {10.1109/MSST.2019.00-14}
+}
+````
 
 ## Depencencies
 
