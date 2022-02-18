@@ -99,7 +99,7 @@ int main (int argc, char * argv[])
 #ifdef USE_QTABLE
   sprintf (outputFilePath, "%s.qt.%s.z", oriFilePath, argv[2]);
 #else
-  sprintf (outputFilePath, "%s.t.%s.z", oriFilePath, argv[2]);
+  sprintf (outputFilePath, "%s.ec.%s.z", oriFilePath, argv[2]);
 #endif /* USE_QTABLE */
 
 #ifdef WITH_Z_CHECKER
@@ -213,7 +213,7 @@ int main (int argc, char * argv[])
 #ifdef USE_QTABLE
   sprintf (zfile, "%s.qt.%s.z", oriFilePath, argv[2]);
 #else
-  sprintf (zfile, "%s.t.%s.z", oriFilePath, argv[2]);
+  sprintf (zfile, "%s.ec.%s.z", oriFilePath, argv[2]);
 #endif
   fp_z = fopen (zfile, "wb");
   icount = fwrite (a_z, outSize, 1, fp_z);
@@ -226,7 +226,7 @@ int main (int argc, char * argv[])
 #ifdef USE_QTABLE
   sprintf (zfile, "%s.qt.%s.z.r", oriFilePath, argv[2]);
 #else
-  sprintf (zfile, "%s.t.%s.z.r", oriFilePath, argv[2]);
+  sprintf (zfile, "%s.ec.%s.z.r", oriFilePath, argv[2]);
 #endif /* USE_QTABLE */
   FILE *fp_r;
   fp_r = fopen (zfile, "wb");
