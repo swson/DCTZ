@@ -35,10 +35,14 @@ DCTZ requires the following libraries to build:
   $ make
   $ make install  ## this line requires sudo
   ````
-  - Ubuntu only:  If you want to install FFTW3 in your local Ubuntu, simply run:
+  - If you want to install FFTW3 on Linux, run the following:
   ````
+   On Ubuntu:
    $ sudo apt-get update -y
    $ sudo apt-get install libfftw3-dev libfftw3-doc -y
+  
+   On RHEL:
+   $ sudo yum install fftw-devel -y
   ````
 - [zlib](https://www.zlib.net/): compressing bin indices and AC coefficients that need to be saved as it is.
 - [Z-checker-installer](https://github.com/CODARcode/z-checker-installer) (optional): when testing DCTZ within Z-Checker. Note that Z-checker-installer will install SZ and zfp automatically. 
