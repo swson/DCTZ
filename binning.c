@@ -10,7 +10,7 @@
 #include "dctz.h"
 
 /* <= item < */
-unsigned char which_bin (double *bin_maxes, double item, double err_bound)
+unsigned char which_bin(double *bin_maxes, double item, double err_bound)
 {
   /*
   double bin_width_side, bin_width_middle, whole_range;
@@ -62,7 +62,7 @@ unsigned char which_bin (double *bin_maxes, double item, double err_bound)
   return bin_id; /* not found */
 }
 
-void gen_bins (double min, double max, double *bin_maxes, double *bin_center, int nbins, double error_bound)
+void gen_bins(double min, double max, double *bin_maxes, double *bin_center, int nbins, double error_bound)
 {
   double bin_width, range_min, range_max; 
   int i, half = nbins/2;
@@ -77,10 +77,10 @@ void gen_bins (double min, double max, double *bin_maxes, double *bin_center, in
   */
   bin_width = error_bound*2*BRSF;
   range_min = -(half*2+1)*(error_bound*BRSF);
-  range_max = (half*2+1)*(error_bound*BRSF); // FIX: set but not used
+  range_max = (half*2+1)*(error_bound*BRSF); /* FIX: set but not used */
 
 #ifdef DEBUG
-  printf ("bin range: min = %e, max = %e\n", range_min, range_max);
+  printf("bin range: min = %e, max = %e\n", range_min, range_max);
 #endif
 
   for (i=0; i<nbins; i++) {
@@ -106,11 +106,11 @@ void gen_bins (double min, double max, double *bin_maxes, double *bin_center, in
 
 #ifdef DEBUG
   for (i=0; i<nbins; i++) 
-    printf ("bin_maxes[%d]: %e, ", i, bin_maxes[i]);
-  printf ("\n");
+    printf("bin_maxes[%d]: %e, ", i, bin_maxes[i]);
+  printf("\n");
 
   for (i=0; i<nbins; i++) 
-    printf ("bin_center[%d]: %e, ", i, bin_center[i]);
-  printf ("\n");
+    printf("bin_center[%d]: %e, ", i, bin_center[i]);
+  printf("\n");
 #endif
 }

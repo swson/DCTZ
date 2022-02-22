@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c99 -Wall -O3 -Wno-unused
+CFLAGS=-std=c99 -Wall -O3 -Wno-unused -g # -DDEBUG
 CFLAGS_ZC=-I$(ZC_INSTALL_DIR)/include
 LDFLAGS=-lm -lfftw3 -lfftw3f -lz -lpthread
 LDFLAGS_EXTRA = -lnetcdf
@@ -9,17 +9,17 @@ LDFLAGS_ZC=-L$(ZC_INSTALL_DIR)/lib -lzc
 %.o: $$(basename $$*).c
 	$(CC) $(CFLAGS) $(INCFOLDER) $(DEFINES) -c $< -o $@
 
-dctz-ec-test: dctz-test.c dctz-comp-lib.c dctz-decomp-lib.c binning.c util.c dct.c dctz-comp-lib-float.c dct-float.c dctz-decomp-lib-float.c
+dctz-ec-test: dctz-test.c dctz-comp-lib.c dctz-decomp-lib.c binning.c util.c dct.c dct-float.c
 	$(CC) $(CFLAGS) $(CFLAGS_ZC) $^ -o $@ $(LDFLAGS) -DUSE_TRUNCATE
 
-dctz-qt-test: dctz-test.c dctz-comp-lib.c dctz-decomp-lib.c binning.c util.c dct.c dctz-comp-lib-float.c dct-float.c dctz-decomp-lib-float.c
+dctz-qt-test: dctz-test.c dctz-comp-lib.c dctz-decomp-lib.c binning.c util.c dct.c dct-float.c 
 
 	$(CC) $(CFLAGS) $(CFLAGS_ZC) $^ -o $@ $(LDFLAGS) -DUSE_TRUNCATE -DUSE_QTABLE
 
-dctz-ec-zc-test: dctz-test.c dctz-comp-lib.c dctz-decomp-lib.c binning.c util.c dct.c dctz-comp-lib-float.c dct-float.c dctz-decomp-lib-float.c
+dctz-ec-zc-test: dctz-test.c dctz-comp-lib.c dctz-decomp-lib.c binning.c util.c dct.c dct-float.c 
 	$(CC) $(CFLAGS) $(CFLAGS_ZC) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ZC) -DUSE_TRUNCATE -DWITH_Z_CHECKER
 
-dctz-qt-zc-test: dctz-test.c dctz-comp-lib.c dctz-decomp-lib.c binning.c util.c dct.c dctz-comp-lib-float.c dct-float.c dctz-decomp-lib-float.c
+dctz-qt-zc-test: dctz-test.c dctz-comp-lib.c dctz-decomp-lib.c binning.c util.c dct.c dct-float.c 
 
 	$(CC) $(CFLAGS) $(CFLAGS_ZC) $^ -o $@ $(LDFLAGS) $(LDFLAGS_ZC) -DUSE_TRUNCATE -DUSE_QTABLE -DWITH_Z_CHECKER
 

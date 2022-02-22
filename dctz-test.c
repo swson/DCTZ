@@ -15,22 +15,21 @@
 #include "zc.h"
 #endif
 
-int main (int argc, char * argv[])
+int main(int argc, char * argv[])
 {
-  size_t r5=0,r4=0,r3=0,r2=0,r1=0;
-  size_t typesize = 0;
-  char oriFilePath[640], outputFilePath[640];
+  size_t r5 = 0, r4 = 0, r3 = 0, r2 = 0, r1 = 0;
+  size_t type_size = 0;
+  char *oriFilePath, outputFilePath[640];
 #ifdef WITH_Z_CHECKER
   char *solName = NULL;
 #endif
   char *varName; 
   double error_bound;
-  void *a_r; /* buffer for reconstructed data */
-  double *d;
-  float *f;
-  int datatype; /* double or float */
-  char *a_z; /* buffer for compressed data */
+  t_var *var_r; /* buffer for reconstructed data */
+  t_var *var; /* buffer for original data */
+  t_var *var_z; /* buffer for compressed data */
   int N, min_argc;
+  t_datatype datatype;
 
 #ifdef WITH_Z_CHECKER
   min_argc = 7;
@@ -40,37 +39,37 @@ int main (int argc, char * argv[])
   
   if (argc < min_argc) {
 #ifdef WITH_Z_CHECKER
-    printf ("Test case: %s -d|-f [err bound] [var name] [srcFilePath] [dimension sizes...] solName \n", argv[0]);
-    printf ("Example: %s -d 1E-3 sedov testdata/x86/testfloat_8_8_128.dat 8 8 128 dctz-ec(1E-3) \n", argv[0]);
+    printf("Test case: %s -d|-f [err bound] [var name] [srcFilePath] [dimension sizes...] solName \n", argv[0]);
+    printf("Example: %s -d 1E-3 sedov testdata/x86/testfloat_8_8_128.dat 8 8 128 dctz-ec(1E-3) \n", argv[0]);
 #else
-    printf ("Test case: %s -d|-f [err bound] [var name] [srcFilePath] [dimension sizes...] \n", argv[0]);
-    printf ("Example: %s -d 1E-3 sedov testdata/x86/testfloat_8_8_128.dat 8 8 128 \n", argv[0]);
+    printf("Test case: %s -d|-f [err bound] [var name] [srcFilePath] [dimension sizes...] \n", argv[0]);
+    printf("Example: %s -d 1E-3 sedov testdata/x86/testfloat_8_8_128.dat 8 8 128 \n", argv[0]);
 #endif
-    exit (0);
+    exit(0);
   }
   
-  error_bound = atof (argv[2]);
+  error_bound = atof(argv[2]);
   varName = argv[3];
 
   assert (argc >= 6);
 
 #ifdef WITH_Z_CHECKER
   if (argc >= 7) { /* 1D */
-    r1 = N = atoi (argv[5]);
+    r1 = N = atoi(argv[5]);
     solName = argv[6]; /* dummy when z-checker is not set */
   }
   if (argc >= 8) { /* 2D */
-    r2 = atoi (argv[6]);
+    r2 = atoi(argv[6]);
     N = r1*r2;
     solName = argv[7]; /* dummy when z-checker is not set */
   }
   if (argc >= 9) { /* 3D */
-    r3 = atoi (argv[7]);
+    r3 = atoi(argv[7]);
     N = r1*r2*r3;
     solName = argv[8]; /* dummy when z-checker is not set */
   } 
   if (argc >= 10) { /* 4D */
-    r4 = atoi (argv[8]);
+    r4 = atoi(argv[8]);
     N = r1*r2*r3*r4;
     solName = argv[9]; /* dummy when z-checker is not set */
   }
@@ -79,31 +78,32 @@ int main (int argc, char * argv[])
     r1 = N = atoi (argv[5]);
   }
   if (argc >= 7) { /* 2D */
-    r2 = atoi (argv[6]);
+    r2 = atoi(argv[6]);
     N = r1*r2;
   }
   if (argc >= 8) { /* 3D */
-    r3 = atoi (argv[7]);
+    r3 = atoi(argv[7]);
     N = r1*r2*r3;
   } 
   if (argc >= 9) { /* 4D */
-    r4 = atoi (argv[8]);
+    r4 = atoi(argv[8]);
     N = r1*r2*r3*r4;
   }
 #endif
   
-  printf ("total number = %d\n", N);
+  printf("total number of elements = %d\n", N);
 	
-  sprintf (oriFilePath, "%s", argv[4]);
-  
+  oriFilePath = argv[4];
+
+  /* argv[2] = error bound, e.g., 1E-3 */
 #ifdef USE_QTABLE
-  sprintf (outputFilePath, "%s.qt.%s.z", oriFilePath, argv[2]);
+  sprintf(outputFilePath, "%s.qt.%s.z", oriFilePath, argv[2]);
 #else
-  sprintf (outputFilePath, "%s.ec.%s.z", oriFilePath, argv[2]);
+  sprintf(outputFilePath, "%s.ec.%s.z", oriFilePath, argv[2]);
 #endif /* USE_QTABLE */
 
 #ifdef WITH_Z_CHECKER
-  ZC_Init ("zc.config"); /* hard coded */
+  ZC_Init("zc.config"); /* hard coded */
 #endif /* WITH_Z_CHECKER */
   
   size_t outSize;
@@ -111,165 +111,176 @@ int main (int argc, char * argv[])
   ZC_DataProperty* dataProperty = NULL;
   ZC_CompareData *compareResult = NULL;
 #endif /* WITH_Z_CHECKER */
-  FILE *fp_in = fopen (oriFilePath, "rb");
+  FILE *fp_in = fopen(oriFilePath, "rb");
   if (fp_in == NULL) {
-    perror ("Failed: ");
-    printf ("File Not Found\n");
+    perror("Failed: ");
+    printf("File Not Found\n");
     return (1);
   }
   
-  if (!strcmp (argv[1], "-d")) {
-    typesize = sizeof(double);
-    datatype = data_type_double;
-    if (NULL == (d = (double *)malloc (N*typesize))) {
-      fprintf (stderr, "Out of memory: a\n");
-      exit (1);
-    }
-    if (NULL == (a_r = (double *)malloc (N*typesize))) {
-      fprintf (stderr, "Out of memory: a\n");
-      exit (1);
-    }
-    if (NULL == (a_z = (char *)malloc (N*typesize))) {
-      fprintf (stderr, "Out of memory: a_z\n");
-      exit (1);
-    }
-
-    size_t bytes_read = fread (d, typesize, N, fp_in);
-    if (bytes_read != N) {
-      perror ("Error reading file");
-      exit (EXIT_FAILURE);
-    }
-#ifdef WITH_Z_CHECKER
-    dataProperty = ZC_startCmpr (varName, ZC_DOUBLE, d, r5, r4, r3, r2, r1);
-#endif /* WITH_Z_CHECKER */
-    dctz_compress (d, N, &outSize, a_z, error_bound);
-  } 
-  else {	
-    typesize = sizeof (float);
-    datatype = data_type_float;
-    if (NULL == (f = (float *)malloc (N*typesize))) {
-      fprintf (stderr, "Out of memory: a\n");
-      exit (1);
-    }
-    if (NULL == (a_r = (float *)malloc (N*typesize))) {
-      fprintf(stderr, "Out of memory: a\n");
-      exit (1);
-    }
-    if (NULL == (a_z = (char *)malloc (N*typesize))) {
-      fprintf (stderr, "Out of memory: a_z\n");
-      exit (1);
-    }
-    size_t bytes_read = fread (f, typesize, N, fp_in);
-    if (bytes_read != N) {
-      perror ("Error reading file");
-      exit (EXIT_FAILURE);
-    }
-#ifdef WITH_Z_CHECKER
-    dataProperty = ZC_startCmpr (varName, ZC_FLOAT, f, r5, r4, r3, r2, r1);
-#endif /* WITH_Z_CHECKER */
-    dctz_compress_float (f, N, &outSize, a_z, error_bound);
-  }	  
-  printf ("oriFilePath = %s, outputFilePath = %s, datatype = %s error = %s, dim1 = %zu dim2 = %zu dim3 = %zu dim4 = %zu\n", oriFilePath, outputFilePath, datatype==0?"double":"float", argv[2], r1, r2, r3, r4);
-  printf ("outsize = %zu\n", outSize);
-#ifdef WITH_Z_CHECKER
-  compareResult = ZC_endCmpr (dataProperty, solName, outSize);
-#endif /* WITH_Z_CHECKER */
-
-#ifdef WITH_Z_CHECKER
-  struct header h;
-
-  memcpy (&h, a_z, sizeof(struct header));
-  double SF = h.scaling_factor;
-
-#ifdef DEBUG
-  printf ("SF = %f\n", SF);
-#endif /* DEBUG */ 
-  // deapply scaling factor to the original data
-  double xscale = pow (10, SF-1);
-  if (SF != 1.0)
-#ifdef _OPENMP
-#pragma omp parallel for private(i) shared(a, SF)
-#endif
-    for (int i=0; i<N; i++) {
-      if (datatype == data_type_double) 
-	d[i] *= xscale; 
-      else 
-	f[i] *= xscale;
-    }
-#ifdef DEBUG
-  for (int i=0; i<BLK_SZ; i++) { // show the first block
-    printf ("d[%d] = %e %p\n", i, d[i], &d[i]);
-    if (i%BLK_SZ == 0 && i != 0) printf ("\n");
+  if (!strcmp(argv[1], "-d")) {
+    type_size = sizeof(double);
+    datatype = DOUBLE;
   }
-#endif
-#endif /* WITH_Z_CHECKER */
+  else {	
+    type_size = sizeof(float);
+    datatype = FLOAT;;
+  }
+
+  var = malloc(sizeof(t_var));
+  var_r = malloc(sizeof(t_var));
+  var_z = malloc(sizeof(t_var));
   
-  fclose (fp_in);
+  if (datatype == DOUBLE) {
+    if (NULL == (var->buf.d = (double *)malloc(N*type_size))) {
+      fprintf(stderr, "Out of memory: org_buf\n");
+      exit(1);
+    }
+    if (NULL == (var_r->buf.d = (double *)malloc(N*type_size))) {
+      fprintf(stderr, "Out of memory: reconst_buf\n");
+      exit(1);
+    }
+    if (NULL == (var_z->buf.d = (double *)malloc(N*type_size))) {
+      fprintf(stderr, "Out of memory: comp_buf\n");
+      exit(1);
+    }
+    var->datatype = var_r->datatype = var_z->datatype = DOUBLE;
+  }
+  else { /*FLOAT */
+    if (NULL == (var->buf.f = (float *)malloc(N*type_size))) {
+      fprintf(stderr, "Out of memory: org_buf\n");
+      exit(1);
+    }
+    if (NULL == (var_r->buf.f = (float *)malloc(N*type_size))) {
+      fprintf(stderr, "Out of memory: reconst_buf\n");
+      exit(1);
+    }
+    if (NULL == (var_z->buf.f = (float *)malloc(N*type_size))) {
+      fprintf(stderr, "Out of memory: comp_buf\n");
+      exit(1);
+    }
+    var->datatype = var_r->datatype = var_z->datatype = FLOAT;
+  }
+    
+  size_t bytes_read;
+  if (datatype == DOUBLE)
+    bytes_read = fread(var->buf.d, type_size, N, fp_in);
+  else /* FLOAT */
+    bytes_read = fread(var->buf.f, type_size, N, fp_in);
+       
+  if (bytes_read != N) {
+    perror("Error reading file");
+    exit(EXIT_FAILURE);
+  }
+#ifdef WITH_Z_CHECKER
+  if (datatype == DOUBLE) 
+    dataProperty = ZC_startCmpr(varName, ZC_DOUBLE, var->buf.d, r5, r4, r3, r2, r1);
+  else /* FLOAT */
+    dataProperty = ZC_startCmpr(varName, ZC_FLOAT, var->buf.f, r5, r4, r3, r2, r1);
+#endif /* WITH_Z_CHECKER */
+  dctz_compress(var, N, &outSize, var_z, error_bound);
+
+  printf("oriFilePath = %s, outputFilePath = %s, datatype = %s error = %s, dim1 = %zu dim2 = %zu dim3 = %zu dim4 = %zu\n", oriFilePath, outputFilePath, datatype==FLOAT?"float":"double", argv[2], r1, r2, r3, r4);
+  printf("outsize = %zu\n", outSize);
+
+  /* restore original data for calculating PSNR properly */
+  /* this is required for calc_psnr() and Z-checker */
+  struct header h;
+  if (datatype == DOUBLE) {
+    memcpy(&h, var_z->buf.d, sizeof(struct header));
+    double xscale = pow(10, (h.scaling_factor.d)-1);
+    /* deapply scaling factor */
+    if (h.scaling_factor.d != 1.0) {
+      int i;
+      for (i=0; i<N; i++)
+	var->buf.d[i] *= xscale;
+    }
+  }
+  else { /* FLOAT */
+    memcpy(&h, var_z->buf.f, sizeof(struct header));
+    float xscale = pow(10, (h.scaling_factor.f)-1);
+    /* deapply scaling factor */
+    if (h.scaling_factor.f != 1.0) {
+      int i;
+      for (i=0; i<N; i++)
+	var->buf.f[i] *= xscale;
+    }
+  }
+
+#ifdef WITH_Z_CHECKER
+  compareResult = ZC_endCmpr(dataProperty, solName, outSize);
+#endif /* WITH_Z_CHECKER */
+
+  fclose(fp_in);
   
   char zfile[640];
   FILE *fp_z;
   int icount;
   
 #ifdef USE_QTABLE
-  sprintf (zfile, "%s.qt.%s.z", oriFilePath, argv[2]);
+  sprintf(zfile, "%s.qt.%s.z", oriFilePath, argv[2]);
 #else
-  sprintf (zfile, "%s.ec.%s.z", oriFilePath, argv[2]);
+  sprintf(zfile, "%s.ec.%s.z", oriFilePath, argv[2]);
 #endif
-  fp_z = fopen (zfile, "wb");
-  icount = fwrite (a_z, outSize, 1, fp_z);
+  fp_z = fopen(zfile, "wb");
+
+  if (datatype == DOUBLE)
+    icount = fwrite(var_z->buf.d, outSize, 1, fp_z);
+  else /* FLOAT */
+    icount = fwrite(var_z->buf.f, outSize, 1, fp_z);
   if (icount != 1) {
-    printf ("Write qtz file failed: %lu != %d!\n", outSize, icount);
-    exit (1);
+    printf("Write qtz file failed: %lu != %d!\n", outSize, icount);
+    exit(1);
   }
-  fclose (fp_z);
+  fclose(fp_z);
   
 #ifdef USE_QTABLE
-  sprintf (zfile, "%s.qt.%s.z.r", oriFilePath, argv[2]);
+  sprintf(zfile, "%s.qt.%s.z.r", oriFilePath, argv[2]);
 #else
-  sprintf (zfile, "%s.ec.%s.z.r", oriFilePath, argv[2]);
+  sprintf(zfile, "%s.ec.%s.z.r", oriFilePath, argv[2]);
 #endif /* USE_QTABLE */
   FILE *fp_r;
-  fp_r = fopen (zfile, "wb");
+  fp_r = fopen(zfile, "wb");
 #ifdef WITH_Z_CHECKER
-  ZC_startDec ();
+  ZC_startDec();
 #endif /* WITH_Z_CHECKER */
-  
-  if (datatype == data_type_double) {
-    dctz_decompress (a_z, (double *) a_r);
+
+  dctz_decompress(var_z, var_r);
 #ifdef WITH_Z_CHECKER
-    ZC_endDec (compareResult, (double *) a_r);
+  if (datatype == DOUBLE)
+    ZC_endDec(compareResult, var_r->buf.d);
+  else /* FLOAT */
+    ZC_endDec(compareResult, var_r->buf.f);
 #endif /* WITH_Z_CHECKER */
-    icount = fwrite ((double *)a_r, N*sizeof(double), 1, fp_r);
-  }
-  else {
-    dctz_decompress_float (a_z, (float *) a_r);
-#ifdef WITH_Z_CHECKER
-    ZC_endDec (compareResult, (float *)a_r);
-#endif /* WITH_Z_CHECKER */
-    icount = fwrite ((float *)a_r, N*sizeof(float), 1, fp_r);
-  }
-  
+
+  if (datatype == DOUBLE)
+    icount = fwrite(var_r->buf.d, N*type_size, 1, fp_r);
+  else /* FLOAT */
+    icount = fwrite(var_r->buf.f, N*type_size, 1, fp_r);
   if (icount != 1) {
-    printf ("Write qtz.r file failed:  != %d!\n",  icount);
-    exit (1);
+    printf("Write qtz.r file failed:  != %d!\n",  icount);
+    exit(1);
   }
 
-  fclose (fp_r);
+  fclose(fp_r);
 
 #ifdef WITH_Z_CHECKER
-  freeDataProperty (dataProperty);
-  freeCompareResult (compareResult);
+  freeDataProperty(dataProperty);
+  freeCompareResult(compareResult);
 #endif /* WITH_Z_CHECKER */
-  free (a_z);
-  free (a_r);
-  if (datatype == data_type_double)
-    free (d);
-  else /* float */
-    free (f);
-  printf ("done\n");
+
+  double cr, psnr;
+  cr = (double)(N*type_size)/(double)outSize;
+  psnr = calc_psnr(var, var_r, N);
+  printf("CR = %f, PSNR = %f\n", cr, psnr);
+  
+  free(var_z);
+  free(var_r);
+  free(var);
+  printf("done\n");
 
 #ifdef WITH_Z_CHECKER
-  ZC_Finalize ();
+  ZC_Finalize();
 #endif /* WITH_Z_CHECKER */
   
   return 0;

@@ -20,10 +20,10 @@
 #include "zlib.h"
 #include "dct.h"
 
-#define DCTZ_VERSION "0.2.0"
+#define DCTZ_VERSION "0.2.1"
 #define DCTZ_VERSION_MAJOR 0
 #define DCTZ_VERSION_MINOR 2
-#define DCTZ_VERSION_PATCH 0
+#define DCTZ_VERSION_PATCH 1
 
 #define BLK_SZ 64
 #define NBITS 16 /* # of bits (8 or 16) for representing bin index */
@@ -42,48 +42,73 @@
 
 #define CEIL(a,b) (a+b-1)/b
 
-enum dtype {data_type_double, data_type_float};
+typedef enum {
+  FLOAT = 0,
+  DOUBLE
+} t_datatype;
 
-union buffers {
-  float *bf;
-  double *bd;
-} bt;
+typedef struct
+{
+  t_datatype datatype;
+  union
+  {
+    float *f;
+    double *d;
+  } buf;
+} t_var;
 
 union {
   unsigned char onebyte;
   unsigned short twobyte;
 } Bin_Id;
 
-struct bstat {
-  double min;
-  double max;
-  double range;
-  double sf;
-};
+typedef struct {
+  union
+  {
+    double d;
+    float f;
+  } min;
+  union
+  {
+    double d;
+    float f;
+  } max;
+  union
+  {
+    double d;
+    float f;
+  } range;
+  union
+  {
+    double d;
+    float f;
+  } sf;
+} t_bstat;
 
 struct header 
 {
   unsigned int num_elements;
   double error_bound;
   unsigned int tot_AC_exact_count;
-  double scaling_factor;
+  union
+  {
+    double d;
+    float f;
+  } scaling_factor;
   unsigned int bindex_sz_compressed;
   unsigned int DC_sz_compressed;
   unsigned int AC_exact_sz_compressed;
 #ifdef USE_QTABLE 
   unsigned int bindex_count;
 #endif  
-//  unsigned int AC_exact_count_sz_compressed;
+  /*  unsigned int AC_exact_count_sz_compressed; */
 };
 
-void calc_data_stat (double *in, struct bstat *bs, int N);
-void calc_data_stat_f (float *in, struct bstat *bs, int N);
-int ceili (double i);
-void gen_bins (double min, double max, double *bin_maxes, double *bin_center, int nbins, double error_bound);
-void *compress_thread (void *arg);
-int dctz_compress (double *d, int N, size_t *outSize, char *a_z, double error_bound);
-int dctz_compress_float (float *f, int N, size_t *outSize, char *a_z, double error_bound);
-int dctz_decompress (char *, double *);
-int dctz_decompress_float (char *, float *);
-
+void calc_data_stat(t_var *in, t_bstat *bs, int N);
+int ceili(double i);
+void gen_bins(double min, double max, double *bin_maxes, double *bin_center, int nbins, double error_bound);
+void *compress_thread(void *arg);
+int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error_bound);
+int dctz_decompress(t_var *var_z, t_var *var_r);
+double calc_psnr(t_var *var, t_var *var_r, int N);
 #endif
