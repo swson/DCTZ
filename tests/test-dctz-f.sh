@@ -7,7 +7,7 @@ rm -f *.z* *.r
 
 for i in '1E-3' '1E-4' '1E-5'
 do
-    for f in "CESM-ATM-tylor/1800x3600/CLDHGH_1_1800_3600.dat 3600 1800"
+    for f in 'CESM-ATM-tylor/1800x3600/CLDHGH_1_1800_3600.dat 3600 1800' 'CESM-ATM-tylor/1800x3600/CLDLOW_1_1800_3600.dat 3600 1800' 'CESM-ATM-tylor/1800x3600/FLDSC_1_1800_3600.dat 3600 1800' 'CESM-ATM-tylor/1800x3600/FREQSH_1_1800_3600.dat 3600 1800' 'CESM-ATM-tylor/1800x3600/PHIS_1_1800_3600.dat 3600 1800'
     do
 	X=`echo $f|cut -c1-4`
 	echo running dctz-ec-test $f $i
