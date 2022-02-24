@@ -39,7 +39,7 @@ void calc_data_stat(t_var *in, t_bstat *bs, int N)
 
 int iceil(double d)
 {
-  int i = (int) d;
+  int i = (int)d;
   if (d == (double)i)
     return i;
   return i + 1;

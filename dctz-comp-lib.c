@@ -153,7 +153,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     /* apply scaling factor */
     if (bs.sf.d != 1.0) {
 #ifdef _OPENMP
-#pragma omp parallel for private(i) shared(a_p, bs.sf.d)
+#pragma omp parallel for private(i) shared(bs.sf.d)
 #endif
       for (i=0; i<N; i++)
 	var->buf.d[i] /= xscale;
@@ -167,7 +167,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     /* apply scaling factor */
     if (bs.sf.f != 1.0) {
 #ifdef _OPENMP
-#pragma omp parallel for private(i) shared(a_p, bs.sf.f)
+#pragma omp parallel for private(i) shared(bs.sf.f)
 #endif
       for (i=0; i<N; i++)
 	var->buf.f[i] /= xscale;
@@ -231,7 +231,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   else /* FLOAT */
     gen_bins(bs.min.f, bs.max.f, bin_maxes, bin_center, NBINS, error_bound);
 
-  int half=NBINS/2;
+  int half = NBINS/2;
   bin_width = error_bound*2*BRSF;
   range_min = -(half*2+1)*(error_bound*BRSF);
   range_max = (half*2+1)*(error_bound*BRSF);
@@ -304,32 +304,55 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif
     
 #ifdef USE_TRUNCATE
-    DC[i] = (float)(a_x.d[i*BLK_SZ]); /* save DC component in truncated*/
+    DC[i] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ] : a_x.f[i*BLK_SZ]); /* save DC component in truncated*/
 #else
     DC[i] = (double)a_x.d[i*BLK_SZ]; /* save DC component */
 #endif
     bin_index[i*BLK_SZ] = NBINS; /* store as it is */
 
     for (j=1; j<l_blk_sz; j++) {
-      double item = a_x.d[i*BLK_SZ+j];
-      unsigned short bin_id;
-      if (item < range_min || item > range_max) {
-	bin_id = NBINS;
+      if (var->datatype == DOUBLE) {
+	double item = a_x.d[i*BLK_SZ+j];
+	unsigned short bin_id;
+	if (item < range_min || item > range_max) {
+	  bin_id = NBINS;
 #ifdef USE_QTABLE
-	/* The Start  of Making Quantizer Table -QT applied to block coefficients  */
-      	if (fabs(item) >= qtable[j])
-	  qtable[j] = fabs(item);
+	  /* The Start  of Making Quantizer Table -QT applied to block coefficients  */
+	  if (fabs(item) >= qtable[j])
+	    qtable[j] = fabs(item);
 #endif /* USE_QTABLE */
-      }      
-      else 
-	bin_id = (unsigned short)((item-range_min)/bin_width);
+	}      
+	else 
+	  bin_id = (unsigned short)((item-range_min)/bin_width);
 #ifdef DEBUG
-      printf("bin_id = %d\n", bin_id);
+	printf("bin_id = %d\n", bin_id);
 #endif
-      bin_index[i*BLK_SZ+j] = bin_id;
+	bin_index[i*BLK_SZ+j] = bin_id;
 #ifdef DEBUG
-      printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (double)item, bin_id);
-#endif 
+	printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (double)item, bin_id);
+#endif
+      } /* DOUBLE */
+      else { /* FLOAT */
+	float item = a_x.f[i*BLK_SZ+j];
+	unsigned short bin_id;
+	if (item < range_min || item > range_max) {
+	  bin_id = NBINS;
+#ifdef USE_QTABLE
+	  /* The Start  of Making Quantizer Table -QT applied to block coefficients  */
+	  if (fabs(item) >= qtable[j])
+	    qtable[j] = fabs(item);
+#endif /* USE_QTABLE */
+	}      
+	else 
+	  bin_id = (unsigned short)((item-range_min)/bin_width);
+#ifdef DEBUG
+	printf("bin_id = %d\n", bin_id);
+#endif
+	bin_index[i*BLK_SZ+j] = bin_id;
+#ifdef DEBUG
+	printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (float)item, bin_id);
+#endif
+      } /* else: FLOAT */
     }
     /* The End of of Making Quantizer Table  */
   }
@@ -347,12 +370,12 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #ifdef USE_QTABLE
 #ifdef DEBUG
   printf("Quantizer Table:\n");
-  for (j=0; j<BLK_SZ ; j++){ /* Show Quantizer Table */
+  for (j=0; j<BLK_SZ ; j++) { /* Show Quantizer Table */
     printf("before qtable[%d] = %e \n", j, qtable[j]);
   }
 #endif
   
-  for (j=1; j<BLK_SZ ; j++) { /* Show Quantizer Table */
+  for (j=1; j<BLK_SZ; j++) { /* Show Quantizer Table */
     //if (qtable[j] < bin_maxes[NBINS-1]) {
     if (qtable[j] < 1.0) {
       qtable[j] = 1.0;
@@ -361,7 +384,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   
 #ifdef DEBUG
   printf("Quantizer Table:\n");
-  for (j=0; j<BLK_SZ ; j++){ /* Show Quantizer Table */
+  for (j=0; j<BLK_SZ ; j++) { /* Show Quantizer Table */
     printf("after qtable[%d] = %e \n", j, qtable[j]);
   }
 #endif
@@ -374,23 +397,23 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
     for (j=1; j<l_blk_sz; j++) {
       unsigned short bin_id;
-      bin_id =  bin_index[i*BLK_SZ+j];
+      bin_id = bin_index[i*BLK_SZ+j];
       if (bin_id == NBINS) { 
 #ifdef USE_QTABLE
         double item = a_x.d[i*BLK_SZ+j];
         /* if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound */
 	if (item < range_min) {
           item = (item/qtable[j])*error_bound*qt_factor + range_min;
-        } else if(item > range_max) {
+        } else if (item > range_max) {
           item = (item/qtable[j])*error_bound*qt_factor + range_max;
         }
       	a_x.d[i*BLK_SZ+j] = item; /* update a_x with updated value */
         if (item < range_min || item > range_max) {
 	  bin_id = NBINS;
 #ifdef USE_TRUNCATE
-	  AC_exact[tot_AC_exact_count++] = (float)(a_x.d[i*BLK_SZ+j]);
+	  AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
 #else
-	  AC_exact[tot_AC_exact_count++] = (double)a_x.d[i*BLK_SZ+j];
+	  AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] | a_x.f[i*BLK_SZ+j]);;
 #endif
 	}
 	else
@@ -401,7 +424,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif
 #else       
 #ifdef USE_TRUNCATE
-	AC_exact[tot_AC_exact_count++] = (float)(a_x.d[i*BLK_SZ+j]);
+	AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
 #else
 	AC_exact[tot_AC_exact_count++] = (double)a_x.d[i*BLK_SZ+j];
 #endif

@@ -24,7 +24,7 @@ union
 {
   float *f;
   double *d;
-} var_xr;
+} var_xr; /* var to store the result of IDCT */
 
 int dctz_decompress(t_var *var_z, t_var *var_r)
 {
@@ -325,66 +325,110 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   /* IDCT block decomposed */
   for (i=0; i<nblk; i++) { /* for each decomposed blk */
     int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
-    if (datatype == DOUBLE) 
+    if (datatype == DOUBLE) {
       var_xr.d[i*BLK_SZ] = DC[i]; /* if USE_TRUNCATE, then float -> double */
-    else /* FLOAT */
-      var_xr.f[i*BLK_SZ] = DC[i]; /* if USE_TRUNCATE, then float -> double */
 #ifdef DEBUG
-    printf("var_xr[%d]=%e\n", i*BLK_SZ, var_xr.d[i*BLK_SZ]);
+      printf("var_xr[%d]=%e\n", i*BLK_SZ, var_xr.d[i*BLK_SZ]);
 #endif
-    for (j=1; j<l_blk_sz; j++) {
+      for (j=1; j<l_blk_sz; j++) {
 #ifdef USE_QTABLE
-      unsigned short sbin_id;
+	unsigned short sbin_id;
 #endif
-      if (bin_index[i*BLK_SZ+j] == NBINS) {
+	if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */
-	sbin_id = bin_index[c++];
-	if (sbin_id == NBINS) {
+	  sbin_id = bin_index[c++];
+	  
+	  if (sbin_id == NBINS) {
+	    var_xr.d[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
+	    pos++;
+	  }
+	  else {
+	    var_xr.d[i*BLK_SZ+j] = bin_center[sbin_id];
+	  }
+	  if (var_xr.d[i*BLK_SZ+j] > 0) {
+	    var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
+	  } else {
+	    var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_min)/(error_bound*qt_factor))*qtable[j];
+	  }
+#else /* DCT_EC */
 	  var_xr.d[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
 	  pos++;
+#endif /* USE_QTABLE */
 	}
 	else {
-	  var_xr.d[i*BLK_SZ+j] = bin_center[sbin_id];
+	  var_xr.d[i*BLK_SZ+j] = bin_center[bin_index[i*BLK_SZ+j]];
 	}
-	if (var_xr.d[i*BLK_SZ+j] > 0) {
-	  var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
-	} else {
-	  var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_min)/(error_bound*qt_factor))*qtable[j];
-	}
-#else /* DCT_EC */
-	var_xr.d[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
-	pos++;
-#endif /* USE_QTABLE */
-      }
-      else {
-	var_xr.d[i*BLK_SZ+j] = bin_center[bin_index[i*BLK_SZ+j]];
-      }
 #ifdef DEBUG
-      printf("after var_xr[%d]=%e\n", i*BLK_SZ+j, var_xr.d[i*BLK_SZ]+j);
+	printf("after var_xr[%d]=%e\n", i*BLK_SZ+j, var_xr.d[i*BLK_SZ]+j);
 #endif
-    }
+      }
 
-    if ((i==nblk-1) && (rem!=0)) {
-      if (datatype == DOUBLE) {
+      if ((i==nblk-1) && (rem!=0)) {
 	dct_finish();
 	dct_init(rem);
       }
-      else { /* FLOAT */
+      
+      ifft_idct(l_blk_sz, var_xr.d+i*BLK_SZ, var_r->buf.d+i*BLK_SZ);
+
+#ifdef DEBUG
+      printf("block %d: after IDCT:\n", i);
+      for (j=0; j<BLK_SZ && (i < 3); j++) { /* show the first block results */
+	printf("var_r[%d] = %e \n", i*BLK_SZ+j, var_r->buf.d[i*BLK_SZ+j]);
+      }
+#endif
+    } /* DOUBLE */
+    else { /* FLOAT */
+      var_xr.f[i*BLK_SZ] = DC[i]; /* if USE_TRUNCATE, then float -> double */
+#ifdef DEBUG
+      printf("var_xr[%d]=%e\n", i*BLK_SZ, var_xr.f[i*BLK_SZ]);
+#endif
+      for (j=1; j<l_blk_sz; j++) {
+#ifdef USE_QTABLE
+	unsigned short sbin_id;
+#endif
+	if (bin_index[i*BLK_SZ+j] == NBINS) {
+#ifdef USE_QTABLE /* DCT_QT */
+	  sbin_id = bin_index[c++];
+	  
+	  if (sbin_id == NBINS) {
+	    var_xr.f[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
+	    pos++;
+	  }
+	  else {
+	    var_xr.f[i*BLK_SZ+j] = bin_center[sbin_id];
+	  }
+	  if (var_xr.d[i*BLK_SZ+j] > 0) {
+	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
+	  } else {
+	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_min)/(error_bound*qt_factor))*qtable[j];
+	  }
+#else /* DCT_EC */
+	  var_xr.f[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
+	  pos++;
+#endif /* USE_QTABLE */
+	}
+	else {
+	  var_xr.f[i*BLK_SZ+j] = bin_center[bin_index[i*BLK_SZ+j]];
+	}
+#ifdef DEBUG
+	printf("after var_xr[%d]=%e\n", i*BLK_SZ+j, var_xr.f[i*BLK_SZ]+j);
+#endif
+      }
+
+      if ((i==nblk-1) && (rem!=0)) {
 	dct_finish_f();
 	dct_init_f(rem);
       }
-    }
-    if (datatype == DOUBLE)
-      ifft_idct(l_blk_sz, var_xr.d+i*BLK_SZ, var_r->buf.d+i*BLK_SZ);
-    else /* FLOAT */
+
       ifft_idct_f(l_blk_sz, var_xr.f+i*BLK_SZ, var_r->buf.f+i*BLK_SZ);
 
 #ifdef DEBUG
-    printf("block %d: after IDCT:\n", i);
-    for (j=0; j<BLK_SZ && (i < 3); j++) { /* show the first block results */
-      printf("var_r[%d] = %e \n", i*BLK_SZ+j, var_r->buf.d[i*BLK_SZ+j]);
-    }
+      printf("block %d: after IDCT:\n", i);
+      for (j=0; j<BLK_SZ && (i < 3); j++) { /* show the first block results */
+	printf("var_r[%d] = %e \n", i*BLK_SZ+j, var_r->buf.f[i*BLK_SZ+j]);
+      }
 #endif
+    } /* FLOAT */
   }
   
   free(DC);
