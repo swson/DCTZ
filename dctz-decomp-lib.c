@@ -34,7 +34,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   double sf_t, zlib_t, idct_t, decomp_t, malloc_t, genbin_t;
 #endif
   double *bin_maxes, *bin_center;
-  unsigned short *bin_index, *bin_indexz;
+  t_bin_id *bin_index, *bin_indexz;
   unsigned int tot_AC_exact_count;
 #ifdef USE_TRUNCATE
   float *DC, *DCz, *AC_exact, *AC_exactz;
@@ -67,12 +67,12 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   tot_AC_exact_count = h.tot_AC_exact_count;
 #ifdef USE_QTABLE
   int K = h.bindex_count;
-  if (NULL == (bin_indexz = (unsigned short *)malloc(K*sizeof(unsigned short)))) {
+  if (NULL == (bin_indexz = (t_bin_id *)malloc(K*sizeof(t_bin_id)))) {
     fprintf(stderr, "Out of memory: bin_indexz[]\n");
     exit(1);
   }
 #else
-  if (NULL == (bin_indexz = (unsigned short *)malloc(N*sizeof(unsigned short)))) {
+  if (NULL == (bin_indexz = (t_bin_id *)malloc(N*sizeof(t_bin_id)))) {
     fprintf(stderr, "Out of memory: bin_indexz[]\n");
     exit(1);
   }
@@ -170,14 +170,14 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
 
 #ifdef USE_QTABLE
-  uLong ucompSize_binindex = K*sizeof(unsigned short);
-  if (NULL == (bin_index = (unsigned short *)malloc(K*sizeof(unsigned short)))) {
+  uLong ucompSize_binindex = K*sizeof(t_bin_id);
+  if (NULL == (bin_index = (t_bin_id *)malloc(K*sizeof(t_bin_id)))) {
     fprintf(stderr, "Out of memory: bin_index[]\n");
     exit(1);
   }
 #else  
-  uLong ucompSize_binindex = N*sizeof(unsigned short);
-  if (NULL == (bin_index = (unsigned short *)malloc(N*sizeof(unsigned short)))) {
+  uLong ucompSize_binindex = N*sizeof(t_bin_id);
+  if (NULL == (bin_index = (t_bin_id *)malloc(N*sizeof(t_bin_id)))) {
     fprintf(stderr, "Out of memory: bin_index[]\n");
     exit(1);
   }
@@ -332,7 +332,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
       for (j=1; j<l_blk_sz; j++) {
 #ifdef USE_QTABLE
-	unsigned short sbin_id;
+	t_bin_id sbin_id;
 #endif
 	if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */
@@ -384,7 +384,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
       for (j=1; j<l_blk_sz; j++) {
 #ifdef USE_QTABLE
-	unsigned short sbin_id;
+	t_bin_id sbin_id;
 #endif
 	if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */

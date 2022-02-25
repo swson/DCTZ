@@ -9,8 +9,9 @@
 
 #include "dctz.h"
 
+#if 0
 /* <= item < */
-unsigned char which_bin(double *bin_maxes, double item, double err_bound)
+t_bin_id which_bin(double *bin_maxes, double item, double err_bound)
 {
   /*
   double bin_width_side, bin_width_middle, whole_range;
@@ -24,7 +25,7 @@ unsigned char which_bin(double *bin_maxes, double item, double err_bound)
 #ifndef USE_BINARY_SEARCH
   int i;
 #endif
-  unsigned char bin_id = 255; /* 0-254: within range, 255: out of range */
+  t_bin_id bin_id = NBINS; /* 0-{254,1022}: within range, 255/1023: out of range */
 
 #ifdef USE_BINARY_SEARCH
   int first = 0, last = 254;
@@ -34,7 +35,7 @@ unsigned char which_bin(double *bin_maxes, double item, double err_bound)
     if (item > bin_maxes[middle])
       first = middle + 1;
     else if (item < bin_maxes[middle] && item >= (bin_maxes[middle]-err_bound*2*BRSF))
-      return (unsigned char)middle;
+      return (t_bin_id)middle;
     else 
       last = middle-1;
     middle = (first+last)/2;
@@ -42,25 +43,26 @@ unsigned char which_bin(double *bin_maxes, double item, double err_bound)
 #else
   for (i=0; i<NBINS; i++)
     if (item < bin_maxes[i] && item >= (bin_maxes[i]-err_bound*2*BRSF))
-      return (unsigned char)i;
+      return (t_bin_id)i;
   /*
   for (i=0; i<index_side; i++) {
     if (item < bin_maxes[i] && item >= (bin_maxes[i]-bin_width_side*BRSF))
-      return (unsigned char)i;
+      return (t_bin_id)i;
   }
   for (i=index_side; i<index_side+index_middle; i++) {
     if (item < bin_maxes[i] && item >= (bin_maxes[i]-bin_width_middle*BRSF))
-      return (unsigned char)i;
+      return (t_bin_id)i;
   }
   for (i=index_side+index_middle; i<index_side+index_middle+index_side; i++){
     if (item < bin_maxes[i] && item >= (bin_maxes[i]-bin_width_side*BRSF))
-      return (unsigned char)i;
+      return (t_bin_id)i;
   }
 */
 #endif
 
   return bin_id; /* not found */
 }
+#endif /* #if 0 */
 
 void gen_bins(double min, double max, double *bin_maxes, double *bin_center, int nbins, double error_bound)
 {

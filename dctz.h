@@ -26,7 +26,7 @@
 #define DCTZ_VERSION_PATCH 1
 
 #define BLK_SZ 64
-#define NBITS 16 /* # of bits (8 or 16) for representing bin index */
+#define NBITS 8 /* # of bits (8 or 16) for representing bin index */
 #define NBINS ((1 << (NBITS)) - 1)
 #define BRSF 1 /* bin range scaling factor: 1: no scaling */
 
@@ -50,6 +50,8 @@ typedef enum {
 typedef struct
 {
   t_datatype datatype;
+  double err_bound;
+  char *var_name;
   union
   {
     float *f;
@@ -57,10 +59,9 @@ typedef struct
   } buf;
 } t_var;
 
-union {
-  unsigned char onebyte;
-  unsigned short twobyte;
-} Bin_Id;
+/* unsigned char => 1 byte: 0-255 */
+/* unsigned short => 2 byte: 0-1023 */
+typedef unsigned short t_bin_id;
 
 typedef struct {
   union

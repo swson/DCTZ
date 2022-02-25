@@ -53,7 +53,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   double sf_t, dct_t, DC_AC_t, zlib_t, comp_t, malloc_t, genbin_t;
 #endif
   double *bin_maxes, *bin_center, bin_width, range_min, range_max;
-  unsigned short *bin_index, *bin_indexz, *bin_indexz2;
+  t_bin_id *bin_index, *bin_indexz, *bin_indexz2;
 #ifdef USE_TRUNCATE
   float *DC, *DCz, *DCz2, *AC_exact, *AC_exactz, *AC_exactz2;
 #else
@@ -117,11 +117,11 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   for (i=0; i<BLK_SZ; i++) {
     qtable[i] = 0.0;
   }
-  if (NULL == (bin_index = (unsigned short *)malloc(2*N*sizeof(unsigned short)))) {
+  if (NULL == (bin_index = (t_bin_id *)malloc(2*N*sizeof(t_bin_id)))) {
     fprintf(stderr, "Out of memory: bin_index[]\n");
     exit(1);
   }
-  memset(bin_index, 0, sizeof(unsigned short)*2*N);
+  memset(bin_index, 0, sizeof(t_bin_id)*2*N);
 #ifdef DEBUG
   for (i=0; i<BLK_SZ; i++) {
     printf("qtable[%d] = %e\n", i, qtable[i]);
@@ -129,11 +129,11 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif
   /* End of Initialize  Quantizer Table */
 #else
-  if (NULL == (bin_index = (unsigned short *)malloc(N*sizeof(unsigned short)))) {
+  if (NULL == (bin_index = (t_bin_id *)malloc(N*sizeof(t_bin_id)))) {
     fprintf(stderr, "Out of memory: bin_index[]\n");
     exit(1);
   }
-  memset(bin_index, 0, sizeof(unsigned short)*N);
+  memset(bin_index, 0, sizeof(t_bin_id)*N);
   
 #endif /* USE_QTABLE */
 
@@ -213,11 +213,11 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   }
 #endif
 
-  if (NULL == (bin_indexz = (unsigned short *)malloc(N*sizeof(unsigned short)))) {
+  if (NULL == (bin_indexz = (t_bin_id *)malloc(N*sizeof(t_bin_id)))) {
     fprintf(stderr, "Out of memory: bin_indexz[]\n");
     exit(1);
   }
-  memset (bin_indexz, 0, sizeof(unsigned short)*N);
+  memset (bin_indexz, 0, sizeof(t_bin_id)*N);
 
 #ifdef TIME_DEBUG
   gettimeofday(&end_t, NULL);
@@ -313,7 +313,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     for (j=1; j<l_blk_sz; j++) {
       if (var->datatype == DOUBLE) {
 	double item = a_x.d[i*BLK_SZ+j];
-	unsigned short bin_id;
+	t_bin_id bin_id;
 	if (item < range_min || item > range_max) {
 	  bin_id = NBINS;
 #ifdef USE_QTABLE
@@ -323,7 +323,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif /* USE_QTABLE */
 	}      
 	else 
-	  bin_id = (unsigned short)((item-range_min)/bin_width);
+	  bin_id = (t_bin_id)((item-range_min)/bin_width);
 #ifdef DEBUG
 	printf("bin_id = %d\n", bin_id);
 #endif
@@ -334,7 +334,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
       } /* DOUBLE */
       else { /* FLOAT */
 	float item = a_x.f[i*BLK_SZ+j];
-	unsigned short bin_id;
+	t_bin_id bin_id;
 	if (item < range_min || item > range_max) {
 	  bin_id = NBINS;
 #ifdef USE_QTABLE
@@ -344,7 +344,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif /* USE_QTABLE */
 	}      
 	else 
-	  bin_id = (unsigned short)((item-range_min)/bin_width);
+	  bin_id = (t_bin_id)((item-range_min)/bin_width);
 #ifdef DEBUG
 	printf("bin_id = %d\n", bin_id);
 #endif
@@ -361,9 +361,12 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   else /* FLOAT */
     dct_finish_f();
 
-#ifdef DEBUG
-  FILE *fp = fopen("dct_result_double.txt", "w+");
-  fwrite(a_x.d, sizeof(double), N, fp);
+#ifdef DCT_FILE_DEBUG
+  FILE *fp = fopen("dct_result.bin", "w+");
+  if (var->datatype == DOUBLE)
+    fwrite(a_x.d, sizeof(double), N, fp);
+  else /* FLOAT */
+    fwrite(a_x.f, sizeof(float), N, fp);
   fclose(fp);
 #endif
 
@@ -396,7 +399,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   for (i=0; i<nblk; i++) {
     int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
     for (j=1; j<l_blk_sz; j++) {
-      unsigned short bin_id;
+      t_bin_id bin_id;
       bin_id = bin_index[i*BLK_SZ+j];
       if (bin_id == NBINS) { 
 #ifdef USE_QTABLE
@@ -417,7 +420,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif
 	}
 	else
-	  bin_id = (unsigned short)((item-range_min)/bin_width);
+	  bin_id = (t_bin_id)((item-range_min)/bin_width);
         bin_index[k++] = bin_id; 	 
 #ifdef DEBUG
 	printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (double)item, bin_id);
@@ -472,19 +475,19 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   gettimeofday(&start_t, NULL);
 #endif
 
-  char zfile1[640];
+  char bin_index_file[640];
   FILE *fp_index;
-  sprintf(zfile1, "bdx.bin"); 
-  fp_index = fopen(zfile1, "wb");
+  sprintf(bin_index_file, "bin_index.bin"); 
+  fp_index = fopen(bin_index_file, "wb");
   fwrite(bin_index, N, 1, fp_index);
   fclose(fp_index);
   
 #ifdef DEBUG
   printf("tot_AC_exact_count=%d\n", tot_AC_exact_count);
 #ifdef USE_QTABLE  
-  printf("bin_index before compression = %lu\n", k*sizeof(unsigned short));
+  printf("bin_index before compression = %lu\n", k*sizeof(t_bin_id));
 #else  
-  printf("bin_index before compression = %lu\n", N*sizeof(unsigned short));
+  printf("bin_index before compression = %lu\n", N*sizeof(t_bin_id));
 #endif  
 #ifdef USE_TRUNCATE
   printf("DC before compression = %lu\n", nblk*sizeof(float));
@@ -511,9 +514,9 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   
   /* compress bin_index */
 #ifdef USE_QTABLE
-  uLong ucompSize_binindex = k*sizeof(unsigned short);
+  uLong ucompSize_binindex = k*sizeof(t_bin_id);
 #else 
-  uLong ucompSize_binindex = N*sizeof(unsigned short);
+  uLong ucompSize_binindex = N*sizeof(t_bin_id);
 #endif  
   uLong compSize_binindex = compressBound(ucompSize_binindex);
 
@@ -621,7 +624,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   deflateEnd(&defstream[2]);
 #endif
 
-  bin_indexz2 = (unsigned short*)realloc(bin_indexz, compSize_binindex); /* TODO: check error */
+  bin_indexz2 = (t_bin_id*)realloc(bin_indexz, compSize_binindex); /* TODO: check error */
 
 #ifdef SIZE_DEBUG
   printf("Compressed bin_index size is: %lu\n", compSize_binindex);
