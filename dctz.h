@@ -26,8 +26,6 @@
 #define DCTZ_VERSION_PATCH 1
 
 #define BLK_SZ 64
-#define NBITS 8 /* # of bits (8 or 16) for representing bin index */
-#define NBINS ((1 << (NBITS)) - 1)
 #define BRSF 1 /* bin range scaling factor: 1: no scaling */
 
 #define MAX(a,b) \
@@ -61,7 +59,10 @@ typedef struct
 
 /* unsigned char => 1 byte: 0-255 */
 /* unsigned short => 2 byte: 0-1023 */
-typedef unsigned short t_bin_id;
+typedef unsigned char t_bin_id;
+
+#define NBITS (sizeof(t_bin_id)<<3) /* # of bits (8 or 16) for representing bin index */
+#define NBINS ((1 << (NBITS)) - 1)
 
 typedef struct {
   union
