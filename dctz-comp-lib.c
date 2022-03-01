@@ -403,33 +403,36 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
       bin_id = bin_index[i*BLK_SZ+j];
       if (bin_id == NBINS) { 
 #ifdef USE_QTABLE
-        double item = a_x.d[i*BLK_SZ+j];
+        double item = (var->datatype == DOUBLE) ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]; /* in case of FLOAT, it will be cast to double */
         /* if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound */
 	if (item < range_min) {
           item = (item/qtable[j])*error_bound*qt_factor + range_min;
         } else if (item > range_max) {
           item = (item/qtable[j])*error_bound*qt_factor + range_max;
         }
-      	a_x.d[i*BLK_SZ+j] = item; /* update a_x with updated value */
+	if (var->datatype == DOUBLE)
+	  a_x.d[i*BLK_SZ+j] = item; /* update a_x with updated value */
+	else /* FLOAT */
+	  a_x.f[i*BLK_SZ+j] = item; /* update a_x with updated value */
         if (item < range_min || item > range_max) {
 	  bin_id = NBINS;
 #ifdef USE_TRUNCATE
 	  AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
 #else
 	  AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] | a_x.f[i*BLK_SZ+j]);;
-#endif
+#endif /* USE_TRUNCATE */
 	}
 	else
 	  bin_id = (t_bin_id)((item-range_min)/bin_width);
         bin_index[k++] = bin_id; 	 
 #ifdef DEBUG
 	printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (double)item, bin_id);
-#endif
-#else       
+#endif /* DEBUG */
+#else 
 #ifdef USE_TRUNCATE
 	AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
 #else
-	AC_exact[tot_AC_exact_count++] = (double)a_x.d[i*BLK_SZ+j];
+	AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] | a_x.f[i*BLK_SZ+j]); /* in case of FLOAT, casting to double makes sense? */
 #endif
 #endif /* USE_QTABLE */
       }

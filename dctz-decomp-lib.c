@@ -337,7 +337,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 	if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */
 	  sbin_id = bin_index[c++];
-	  
+
 	  if (sbin_id == NBINS) {
 	    var_xr.d[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
 	    pos++;
@@ -397,7 +397,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 	  else {
 	    var_xr.f[i*BLK_SZ+j] = bin_center[sbin_id];
 	  }
-	  if (var_xr.d[i*BLK_SZ+j] > 0) {
+	  if (var_xr.f[i*BLK_SZ+j] > 0) {
 	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
 	  } else {
 	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_min)/(error_bound*qt_factor))*qtable[j];
