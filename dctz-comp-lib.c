@@ -673,7 +673,11 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif  
   //h.AC_exact_count_sz_compressed = compSize_AC_exact_count;
 
-  unsigned char *cur_p = (unsigned char *)var_z->buf.d;
+  unsigned char *cur_p;
+  if (var->datatype == DOUBLE)
+    cur_p = (unsigned char *)(var_z->buf.d);
+  else
+    cur_p = (unsigned char *)(var_z->buf.f);
   memcpy(cur_p, &h, sizeof(struct header));
   cur_p += sizeof(struct header);
   memcpy(cur_p, bin_indexz2, compSize_binindex);
