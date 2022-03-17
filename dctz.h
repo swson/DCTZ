@@ -89,6 +89,7 @@ typedef struct {
 
 struct header 
 {
+  t_datatype datatype;
   unsigned int num_elements;
   double error_bound;
   unsigned int tot_AC_exact_count;

@@ -40,10 +40,14 @@ int main(int argc, char * argv[])
   memcpy(&h, buf, sizeof(struct header));
 
   printf("File Name=%s\n", argv[1]);
+  printf("data type=%s\n", (h.datatype==DOUBLE)?"double":"float");
   printf("N=%d\n", h.num_elements);
   printf("error_bound=%f\n", h.error_bound);
   printf("total # of AC_exact=%d\n", h.tot_AC_exact_count);
-  printf("SF=%f\n", h.scaling_factor.d);
+  if (h.datatype == DOUBLE)
+    printf("SF=%f\n", h.scaling_factor.d);
+  else /* FLOAT */
+    printf("SF=%f\n", h.scaling_factor.f);
   
   free(buf);
   fclose(fp);

@@ -1,6 +1,9 @@
 #!/bin/bash
 echo "deleting *.z*, *.r, ..."
-rm -f *.z* *.r 
+rm -f *.z* *.r dct_result.bin
+
+FILE=dct_result.bin
+BIN_FILE=bin_index.bin
 
 #wget http://www.mcs.anl.gov/~shdi/download/CESM-ATM-tylor.tar.gz
 #tar xvfz CESM-ATM-tylor.tar.gz

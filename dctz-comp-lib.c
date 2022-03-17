@@ -657,7 +657,8 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif
 
   *outSize = sizeof(struct header) + compSize_binindex + compSize_DC + compSize_AC_exact;
-  
+
+  h.datatype = var->datatype;
   h.num_elements = N;
   h.error_bound = error_bound;
   h.tot_AC_exact_count = tot_AC_exact_count;
