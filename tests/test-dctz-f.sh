@@ -12,7 +12,7 @@ for f in 'CESM-ATM-tylor/1800x3600/CLDHGH_1_1800_3600.dat 3600 1800' 'CESM-ATM-t
 do
     for i in '1E-3' '1E-4' '1E-5'
     do
-	X=`echo $f|cut -c1-4`
+	X=`echo $f|cut -c26-29`
 	echo running dctz-ec-test $f $i
 	../dctz-ec-test -f $i var $f 2>&1 | tee dctz-ec-comp.$X.$i.log
 	if [ -f "$FILE" ]; then
