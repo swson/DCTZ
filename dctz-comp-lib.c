@@ -24,7 +24,7 @@
 
 #define DEF_MEM_LEVEL 8
 
-union 
+union
 {
   float *f;
   double *d;
@@ -61,7 +61,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif
   struct header h;
   t_bstat bs;
-  size_t type_size = 0; 
+  size_t type_size = 0;
 #ifdef USE_QTABLE
   double *qtable;  /* Quantizer Table */
 #endif
@@ -82,7 +82,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
       fprintf(stderr, "Out of memory: a_x\n");
       exit(1);
     }
-  } 
+  }
 
   if (error_bound < 1E-6) {
     printf("ERROR BOUND is not acceptable");
@@ -102,7 +102,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 
 #ifdef DEBUG
   for (i=0; i<BLK_SZ; i++) { /* show the first block */
-    printf("a[%d] = %e\n", i, var->buf.d[i]); 
+    printf("a[%d] = %e\n", i, var->buf.d[i]);
     if (i%BLK_SZ == 0 && i != 0) printf("\n");
   }
 #endif
@@ -113,7 +113,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     fprintf(stderr, "Out of memory: qtable\n");
     exit(1);
   }
-  
+
   for (i=0; i<BLK_SZ; i++) {
     qtable[i] = 0.0;
   }
@@ -134,22 +134,23 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     exit(1);
   }
   memset(bin_index, 0, sizeof(t_bin_id)*N);
-  
+
 #endif /* USE_QTABLE */
 
 #ifdef TIME_DEBUG
   gettimeofday(&start_t, NULL);
   gstart_t = start_t;
 #endif
-  
+
   /* determine scaling factor */
   calc_data_stat(var, &bs, N);
 
   if (var->datatype == DOUBLE) {
-#ifdef DEBUG
+
     printf("scaling factor = %f\n", bs.sf.d);
-#endif
-    double xscale = pow(10, (bs.sf.d)-1);
+
+    double xscale = pow(10, (bs.sf.d));
+    printf("xscal in compression = %f\n", xscale);
     /* apply scaling factor */
     if (bs.sf.d != 1.0) {
 #ifdef _OPENMP
@@ -163,7 +164,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #ifdef DEBUG
     printf("scaling factor = %f\n", bs.sf.f);
 #endif
-    float xscale = pow(10, (bs.sf.f)-1);
+    float xscale = pow(10, (bs.sf.f));
     /* apply scaling factor */
     if (bs.sf.f != 1.0) {
 #ifdef _OPENMP
@@ -173,14 +174,14 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 	var->buf.f[i] /= xscale;
     }
   }
-  
-#ifdef TIME_DEBUG 
+
+#ifdef TIME_DEBUG
   gettimeofday(&end_t, NULL);
   sf_t = (double)((end_t.tv_sec*1000000 + end_t.tv_usec)-(start_t.tv_sec*1000000 + start_t.tv_usec));
-  
+
   gettimeofday(&start_t, NULL);
 #endif
-  
+
   /* DCT over decomposed blocks */
   nblk = CEIL(N, BLK_SZ);
   rem = N % BLK_SZ;
@@ -294,7 +295,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
       dct_fftw(var->buf.d+i*BLK_SZ, a_x.d+i*BLK_SZ, l_blk_sz, nblk);
     else /* FLOAT */
       dct_fftw_f(var->buf.f+i*BLK_SZ, a_x.f+i*BLK_SZ, l_blk_sz, nblk);
-    
+
 #ifdef DEBUG
     printf("block %d: after DCT:\n", i);
     for (j=0; j<BLK_SZ && (i<3); j++){ /* show the first block only */
@@ -302,7 +303,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     }
     printf("\n");
 #endif
-    
+
 #ifdef USE_TRUNCATE
     DC[i] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ] : a_x.f[i*BLK_SZ]); /* save DC component in truncated*/
 #else
@@ -321,8 +322,8 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 	  if (fabs(item) >= qtable[j])
 	    qtable[j] = fabs(item);
 #endif /* USE_QTABLE */
-	}      
-	else 
+	}
+	else
 	  bin_id = (t_bin_id)((item-range_min)/bin_width);
 #ifdef DEBUG
 	printf("bin_id = %d\n", bin_id);
@@ -342,8 +343,8 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 	  if (fabs(item) >= qtable[j])
 	    qtable[j] = fabs(item);
 #endif /* USE_QTABLE */
-	}      
-	else 
+	}
+	else
 	  bin_id = (t_bin_id)((item-range_min)/bin_width);
 #ifdef DEBUG
 	printf("bin_id = %d\n", bin_id);
@@ -377,14 +378,14 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     printf("before qtable[%d] = %e \n", j, qtable[j]);
   }
 #endif
-  
+
   for (j=1; j<BLK_SZ; j++) { /* Show Quantizer Table */
     //if (qtable[j] < bin_maxes[NBINS-1]) {
     if (qtable[j] < 1.0) {
       qtable[j] = 1.0;
     }
   }
-  
+
 #ifdef DEBUG
   printf("Quantizer Table:\n");
   for (j=0; j<BLK_SZ ; j++) { /* Show Quantizer Table */
@@ -392,16 +393,16 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   }
 #endif
 #endif
-  
+
   unsigned int k = N;
   double qt_factor = (NBINS == 255 ? 10.0 : 2000.0);
-  
+
   for (i=0; i<nblk; i++) {
     int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
     for (j=1; j<l_blk_sz; j++) {
       t_bin_id bin_id;
       bin_id = bin_index[i*BLK_SZ+j];
-      if (bin_id == NBINS) { 
+      if (bin_id == NBINS) {
 #ifdef USE_QTABLE
         double item = (var->datatype == DOUBLE) ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]; /* in case of FLOAT, it will be cast to double */
         /* if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound */
@@ -424,11 +425,11 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 	}
 	else
 	  bin_id = (t_bin_id)((item-range_min)/bin_width);
-        bin_index[k++] = bin_id; 	 
+        bin_index[k++] = bin_id;
 #ifdef DEBUG
 	printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (double)item, bin_id);
 #endif /* DEBUG */
-#else 
+#else
 #ifdef USE_TRUNCATE
 	AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
 #else
@@ -438,7 +439,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
       }
     }
   }
-  
+
 #ifdef DEBUG
   printf("total AC_exact_count = %d\n", tot_AC_exact_count);
 #endif
@@ -449,7 +450,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 
   gettimeofday(&start_t, NULL);
 #endif
-  
+
   free(bin_maxes);
 
 #ifdef DEBUG
@@ -460,7 +461,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     bin_freq[(int)bin_index[i++]]++;
   }
   printf("i=%d\n", i);
-  
+
   int sum = 0;
   printf("bin_freq: ");
   for (i=0; i<NBINS+1; i++) {
@@ -480,18 +481,18 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 
   char bin_index_file[640];
   FILE *fp_index;
-  sprintf(bin_index_file, "bin_index.bin"); 
+  sprintf(bin_index_file, "bin_index.bin");
   fp_index = fopen(bin_index_file, "wb");
   fwrite(bin_index, N, 1, fp_index);
   fclose(fp_index);
-  
+
 #ifdef DEBUG
   printf("tot_AC_exact_count=%d\n", tot_AC_exact_count);
-#ifdef USE_QTABLE  
+#ifdef USE_QTABLE
   printf("bin_index before compression = %lu\n", k*sizeof(t_bin_id));
-#else  
+#else
   printf("bin_index before compression = %lu\n", N*sizeof(t_bin_id));
-#endif  
+#endif
 #ifdef USE_TRUNCATE
   printf("DC before compression = %lu\n", nblk*sizeof(float));
   printf("AC_exact before compression = %lu\n", tot_AC_exact_count*sizeof(float));
@@ -507,25 +508,25 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   /* set defaults (not all pthread implementations default to joinable) */
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-  
+
   /* setup for compress */
   z_stream defstream[3];
-  
+
   defstream[0].zalloc = Z_NULL;
   defstream[0].zfree = Z_NULL;
   defstream[0].opaque = Z_NULL;
-  
+
   /* compress bin_index */
 #ifdef USE_QTABLE
   uLong ucompSize_binindex = k*sizeof(t_bin_id);
-#else 
+#else
   uLong ucompSize_binindex = N*sizeof(t_bin_id);
-#endif  
+#endif
   uLong compSize_binindex = compressBound(ucompSize_binindex);
 
-  int windowBits = 14; 
+  int windowBits = 14;
   deflateInit2(&defstream[0], 1, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
- 
+
   defstream[0].avail_in = ucompSize_binindex;
   defstream[0].next_in = (Bytef *)bin_index;
   defstream[0].avail_out = compSize_binindex;
@@ -536,7 +537,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     fprintf(stderr, "Error creating thread\n");
     exit(0);
   }
-  
+
   /* compress DC */
   defstream[1].zalloc = Z_NULL;
   defstream[1].zfree = Z_NULL;
@@ -551,7 +552,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif
 
   deflateInit2(&defstream[1], 1, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
- 
+
   defstream[1].avail_in = ucompSize_DC;
   defstream[1].next_in = (Bytef *)DC;
   defstream[1].avail_out = compSize_DC;
@@ -567,7 +568,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   defstream[2].zalloc = Z_NULL;
   defstream[2].zfree = Z_NULL;
   defstream[2].opaque = Z_NULL;
-  
+
 #ifdef USE_TRUNCATE
   uLong ucompSize_AC_exact = N*sizeof(float);
   uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
@@ -662,16 +663,16 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   h.num_elements = N;
   h.error_bound = error_bound;
   h.tot_AC_exact_count = tot_AC_exact_count;
-  if (var->datatype == DOUBLE) 
+  if (var->datatype == DOUBLE)
     h.scaling_factor.d = bs.sf.d;
   else /* FLOAT */
-    h.scaling_factor.f = bs.sf.f; 
+    h.scaling_factor.f = bs.sf.f;
   h.bindex_sz_compressed = compSize_binindex;
   h.DC_sz_compressed = compSize_DC;
   h.AC_exact_sz_compressed = compSize_AC_exact;
 #ifdef USE_QTABLE
   h.bindex_count = k;
-#endif  
+#endif
   //h.AC_exact_count_sz_compressed = compSize_AC_exact_count;
 
   unsigned char *cur_p;
@@ -698,7 +699,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   else /* FLOAT */
     free(a_x.f);
   free(DC);
-  free(DCz2); 
+  free(DCz2);
   free(bin_center);
   //free(AC_exact_count);
   //free(AC_exact_countz2);
@@ -709,7 +710,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #ifdef USE_QTABLE
   free(qtable);
 #endif
-  
+
 #ifndef SIZE_DEBUG
   printf("outSize = %zu\n", *outSize);
 #endif
