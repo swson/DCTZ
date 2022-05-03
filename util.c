@@ -22,7 +22,7 @@ void calc_data_stat(t_var *in, t_bstat *bs, int N)
       if (fabs(in->buf.d[i]) < bs->min.d) bs->min.d = fabs(in->buf.d[i]);
     }
 
-    bs->sf.d = ceil(log10(bs->max.d));
+    bs->sf.d = (log10(bs->max.d));
   }
   else { /* FLOAT */
     bs->max.f = fabs(in->buf.f[0]);
@@ -33,7 +33,7 @@ void calc_data_stat(t_var *in, t_bstat *bs, int N)
       if (fabs(in->buf.f[i]) < bs->min.f) bs->min.f = fabs(in->buf.f[i]);
     }
 
-    bs->sf.f = ceil(log10(bs->max.f));
+    bs->sf.f = (log10(bs->max.f));
   }
 }
 
@@ -48,6 +48,7 @@ int iceil(double d)
 double calc_psnr(t_var *var, t_var *var_r, int N)
 {
   double sum_sq=0.0, mse, rmse, relative_range, psnr, min, max;
+  double maxdiff = 0.0;
   int i;
 
   if (var->datatype == DOUBLE) {
@@ -58,6 +59,9 @@ double calc_psnr(t_var *var, t_var *var_r, int N)
       if (var->buf.d[i] < min) min = var->buf.d[i];
     }
     for (i=0; i<N; i++) {
+      if(fabs(var->buf.d[i]-var_r->buf.d[i])>maxdiff){
+        maxdiff = fabs(var->buf.d[i]-var_r->buf.d[i]);
+      }
       double error = var->buf.d[i]-var_r->buf.d[i];
       sum_sq += (error*error);
     }
@@ -70,7 +74,10 @@ double calc_psnr(t_var *var, t_var *var_r, int N)
       if (var->buf.f[i] < min) min = var->buf.f[i];
     }
     for (i=0; i<N; i++) {
-      float error = var->buf.f[i]-var_r->buf.f[i]; 
+      if(fabs(var->buf.f[i]-var_r->buf.f[i])>maxdiff){
+        maxdiff = fabs(var->buf.f[i]-var_r->buf.f[i]);
+      }
+      float error = var->buf.f[i]-var_r->buf.f[i];
       sum_sq += (error*error);
     }
   }
@@ -78,6 +85,7 @@ double calc_psnr(t_var *var, t_var *var_r, int N)
   rmse = sqrt(mse);
   relative_range = max - min;
   psnr = 20*log10(relative_range/rmse);
+  printf("maxdiff = %.6f\n", maxdiff);
 
   return psnr;
 }
