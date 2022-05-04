@@ -149,7 +149,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #ifdef DEBUG
     printf("scaling factor = %f\n", bs.sf.d);
 #endif
-    double xscale = pow(10, (bs.sf.d)-1);
+    double xscale = pow(10, bs.sf.d);
     /* apply scaling factor */
     if (bs.sf.d != 1.0) {
 #ifdef _OPENMP
@@ -163,7 +163,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #ifdef DEBUG
     printf("scaling factor = %f\n", bs.sf.f);
 #endif
-    float xscale = pow(10, (bs.sf.f)-1);
+    float xscale = pow(10, bs.sf.f);
     /* apply scaling factor */
     if (bs.sf.f != 1.0) {
 #ifdef _OPENMP
