@@ -441,7 +441,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
 
   if (datatype == DOUBLE) {
-    double xscale = pow(10, (h.scaling_factor.d)-1);
+    double xscale = pow(10, h.scaling_factor.d);
     /*  deapply scaling factor */
     if (h.scaling_factor.d != 1.0) {
       for (i=0; i<N; i++)
@@ -449,7 +449,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
     }
   }
   else { /* FLOAT */
-    float xscale = pow(10, (h.scaling_factor.f)-1);
+    float xscale = pow(10, h.scaling_factor.f);
     /* deapply scaling factor */
     if (h.scaling_factor.f != 1.0) {
       for (i=0; i<N; i++)
