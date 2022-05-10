@@ -45,9 +45,9 @@ int iceil(double d)
   return i + 1;
 }
 
-double calc_psnr(t_var *var, t_var *var_r, int N)
+double calc_psnr(t_var *var, t_var *var_r, int N, double error_bound)
 {
-  double sum_sq=0.0, mse, rmse, relative_range, psnr, min, max;
+  double sum_sq=0.0, mse, rmse, relative_range, psnr, min, max, relative_error;
   double maxdiff = 0.0;
   int i;
 
@@ -85,7 +85,12 @@ double calc_psnr(t_var *var, t_var *var_r, int N)
   rmse = sqrt(mse);
   relative_range = max - min;
   psnr = 20*log10(relative_range/rmse);
-  printf("maxdiff = %.6f\n", maxdiff);
-
+  relative_error = maxdiff/relative_range;
+  printf("relative error = %.6f\n", relative_error);
+  if (relative_error < error_bound){
+    printf("Guarantee the error bound\n");
+  }else{
+    printf("Not guarantee the error bound\n");
+  }
   return psnr;
 }
