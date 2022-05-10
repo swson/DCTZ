@@ -87,7 +87,7 @@ typedef struct {
   } sf;
 } t_bstat;
 
-struct header 
+struct header
 {
   t_datatype datatype;
   unsigned int num_elements;
@@ -101,9 +101,9 @@ struct header
   unsigned int bindex_sz_compressed;
   unsigned int DC_sz_compressed;
   unsigned int AC_exact_sz_compressed;
-#ifdef USE_QTABLE 
+#ifdef USE_QTABLE
   unsigned int bindex_count;
-#endif  
+#endif
   /*  unsigned int AC_exact_count_sz_compressed; */
 };
 
@@ -113,5 +113,5 @@ void gen_bins(double min, double max, double *bin_maxes, double *bin_center, int
 void *compress_thread(void *arg);
 int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error_bound);
 int dctz_decompress(t_var *var_z, t_var *var_r);
-double calc_psnr(t_var *var, t_var *var_r, int N);
+double calc_psnr(t_var *var, t_var *var_r, int N, double error_bound);
 #endif
