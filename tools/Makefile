@@ -10,5 +10,13 @@ LDFLAGS_EXTRA = -lnetcdf
 dctz-dump: dctz-dump.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
+rand-gen: rand-gen.c
+	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+.PHONY: all
+.DEFAULT_GOAL:=all
+
+all:	dctz-dump rand-gen
+
 clean:
-	rm -f *~ *.o dctz-dump
+	rm -f *~ *.o dctz-dump rand-gen
