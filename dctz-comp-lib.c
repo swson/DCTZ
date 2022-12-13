@@ -107,6 +107,12 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   }
 #endif
 
+if (NULL == (bin_index = (t_bin_id *)malloc(N*sizeof(t_bin_id)))) {
+  fprintf(stderr, "Out of memory: bin_index[]\n");
+  exit(1);
+}
+memset(bin_index, 0, sizeof(t_bin_id)*N);
+
 #ifdef USE_QTABLE
   /* Start of Initialize  Quantizer Table */
   if (NULL == (qtable = (double *)malloc(BLK_SZ*sizeof(double)))) {
@@ -117,25 +123,14 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   for (i=0; i<BLK_SZ; i++) {
     qtable[i] = 0.0;
   }
-  if (NULL == (bin_index = (t_bin_id *)malloc(2*N*sizeof(t_bin_id)))) {
-    fprintf(stderr, "Out of memory: bin_index[]\n");
-    exit(1);
-  }
-  memset(bin_index, 0, sizeof(t_bin_id)*2*N);
+#endif /* USE_QTABLE */
+
 #ifdef DEBUG
   for (i=0; i<BLK_SZ; i++) {
     printf("qtable[%d] = %e\n", i, qtable[i]);
   }
 #endif
   /* End of Initialize  Quantizer Table */
-#else
-  if (NULL == (bin_index = (t_bin_id *)malloc(N*sizeof(t_bin_id)))) {
-    fprintf(stderr, "Out of memory: bin_index[]\n");
-    exit(1);
-  }
-  memset(bin_index, 0, sizeof(t_bin_id)*N);
-  
-#endif /* USE_QTABLE */
 
 #ifdef TIME_DEBUG
   gettimeofday(&start_t, NULL);
@@ -149,7 +144,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #ifdef DEBUG
     printf("scaling factor = %f\n", bs.sf.d);
 #endif
-    double xscale = pow(10, bs.sf.d);
+    double xscale = pow(10, bs.sf.d - 1);
     /* apply scaling factor */
     if (bs.sf.d != 1.0) {
 #ifdef _OPENMP
@@ -163,7 +158,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #ifdef DEBUG
     printf("scaling factor = %f\n", bs.sf.f);
 #endif
-    float xscale = pow(10, bs.sf.f);
+    float xscale = pow(10, bs.sf.f - 1);
     /* apply scaling factor */
     if (bs.sf.f != 1.0) {
 #ifdef _OPENMP
@@ -393,7 +388,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 #endif
 #endif
   
-  unsigned int k = N;
+  //unsigned int k = N;
   double qt_factor = (NBINS == 255 ? 10.0 : 2000.0);
   
   for (i=0; i<nblk; i++) {
@@ -424,7 +419,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
 	}
 	else
 	  bin_id = (t_bin_id)((item-range_min)/bin_width);
-        bin_index[k++] = bin_id; 	 
+        //bin_index[k++] = bin_id; 	 
 #ifdef DEBUG
 	printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (double)item, bin_id);
 #endif /* DEBUG */
@@ -517,14 +512,14 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   
   /* compress bin_index */
 #ifdef USE_QTABLE
-  uLong ucompSize_binindex = k*sizeof(t_bin_id);
+  uLong ucompSize_binindex = N*sizeof(t_bin_id);
 #else 
   uLong ucompSize_binindex = N*sizeof(t_bin_id);
 #endif  
   uLong compSize_binindex = compressBound(ucompSize_binindex);
 
   int windowBits = 14; 
-  deflateInit2(&defstream[0], 1, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+  deflateInit2(&defstream[0], 9, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
  
   defstream[0].avail_in = ucompSize_binindex;
   defstream[0].next_in = (Bytef *)bin_index;
@@ -550,7 +545,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   uLong compSize_DC = compressBound(ucompSize_DC);
 #endif
 
-  deflateInit2(&defstream[1], 1, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+  deflateInit2(&defstream[1], 9, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
  
   defstream[1].avail_in = ucompSize_DC;
   defstream[1].next_in = (Bytef *)DC;
@@ -576,7 +571,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
 #endif
 
-  deflateInit2(&defstream[2], 1, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+  deflateInit2(&defstream[2], 9, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
 
   defstream[2].avail_in = ucompSize_AC_exact;
   defstream[2].next_in = (Bytef *)AC_exact;
@@ -670,7 +665,7 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   h.DC_sz_compressed = compSize_DC;
   h.AC_exact_sz_compressed = compSize_AC_exact;
 #ifdef USE_QTABLE
-  h.bindex_count = k;
+  h.bindex_count = N;
 #endif  
   //h.AC_exact_count_sz_compressed = compSize_AC_exact_count;
 

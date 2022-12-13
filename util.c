@@ -22,7 +22,7 @@ void calc_data_stat(t_var *in, t_bstat *bs, int N)
       if (fabs(in->buf.d[i]) < bs->min.d) bs->min.d = fabs(in->buf.d[i]);
     }
 
-    bs->sf.d = (log10(bs->max.d));
+    bs->sf.d = ceil(log10(bs->max.d));
   }
   else { /* FLOAT */
     bs->max.f = fabs(in->buf.f[0]);
@@ -33,7 +33,7 @@ void calc_data_stat(t_var *in, t_bstat *bs, int N)
       if (fabs(in->buf.f[i]) < bs->min.f) bs->min.f = fabs(in->buf.f[i]);
     }
 
-    bs->sf.f = (log10(bs->max.f));
+    bs->sf.f = ceil(log10(bs->max.f));
   }
 }
 

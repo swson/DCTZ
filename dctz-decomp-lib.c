@@ -311,7 +311,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
   
   unsigned int pos = 0;
-  unsigned int c = N;
+  //unsigned int c = N;
 
   double range_max = error_bound * NBINS;
   double range_min = -error_bound * NBINS;
@@ -336,15 +336,15 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
 	if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */
-	  sbin_id = bin_index[c++];
+	  //sbin_id = bin_index[c++];
 
-	  if (sbin_id == NBINS) {
+	  //if (sbin_id == NBINS) {
 	    var_xr.d[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
 	    pos++;
-	  }
-	  else {
-	    var_xr.d[i*BLK_SZ+j] = bin_center[sbin_id];
-	  }
+	  //}
+	  //else {
+	  //  var_xr.d[i*BLK_SZ+j] = bin_center[sbin_id];
+	  //}
 	  if (var_xr.d[i*BLK_SZ+j] > 0) {
 	    var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
 	  } else {
@@ -388,15 +388,15 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
 	if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */
-	  sbin_id = bin_index[c++];
+	  //sbin_id = bin_index[c++];
 	  
-	  if (sbin_id == NBINS) {
+	  //if (sbin_id == NBINS) {
 	    var_xr.f[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
 	    pos++;
-	  }
-	  else {
-	    var_xr.f[i*BLK_SZ+j] = bin_center[sbin_id];
-	  }
+	  //}
+	  //else {
+	  //  var_xr.f[i*BLK_SZ+j] = bin_center[sbin_id];
+	  //}
 	  if (var_xr.f[i*BLK_SZ+j] > 0) {
 	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
 	  } else {
