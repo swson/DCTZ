@@ -7,7 +7,7 @@
        See LICENSE in top-level directory.
 */
 
-// gcc -o dct-fftw dct-fftw.c -lm -lfftw3 -lfftw3f
+// gcc -o dct-fftw-test dct-fftw-test.c -lm -lfftw3 -lfftw3f
 // sample dataset:
 //   double-precision: https://sites.uml.edu/seungwoo-son/files/2019/07/dctz-test-data.zip
 //   single-precision: http://www.mcs.anl.gov/~shdi/download/CESM-ATM-tylor.tar.gz
@@ -16,13 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <float.h>
 #include <fftw3.h>
-
-void dump_data(int n, double *data) {
-  for (int i=0; i<n; i++)
-    printf("%f ", data[i]);
-  printf("\n");
-}
 
 int main(int argc, char *argv[])
 {
@@ -67,11 +62,27 @@ int main(int argc, char *argv[])
     fftw_plan plan_inv = fftw_plan_r2r_1d(N, dx, dr, FFTW_REDFT01, FFTW_ESTIMATE);
     fftw_execute(plan_inv);
 
+    /* FFTW doesn't rescale the output of the transform,
+     * so the result must be divised by 2*N
+     */
     for (int i=0; i<N; i++)
-      dr[i] /= 2*N;
+      dr[i] /= 2.0*N;
       
     fout = fopen(outFilePath, "w");
     fwrite(dr, sizeof(double)*N, 1, fout);
+
+    int outliers=0;
+    for (int i=0; i<N; i++) {
+      if ((d[i]-dr[i]) > DBL_EPSILON) {
+	outliers++;
+	if (outliers < 5)
+	  printf("reconstruction error=%e\n", d[i]-dr[i]);
+      }
+    }
+
+    if (outliers != 0)
+      printf("reconstructed data (in double) differ from the original (%d out of %d)\n", outliers, N);
+    
     free(d); free(dx); free(dr);
   }
   else { /* float */
@@ -85,9 +96,23 @@ int main(int argc, char *argv[])
     fftwf_execute(plan_inv);
 
     for (int i=0; i<N; i++)
-      fr[i] /= 2*N;
+      fr[i] /= 2.0f*N;
+
     fout = fopen(outFilePath, "w");
     fwrite(fr, sizeof(float)*N, 1, fout);
+
+    int outliers=0;
+    for (int i=0; i<N; i++) {
+      if ((f[i]-fr[i]) > FLT_EPSILON) {
+	outliers++;
+	if (outliers < 5)
+	  printf("reconstruction error=%e\n", f[i]-fr[i]);
+      }
+    }
+
+    if (outliers != 0)
+      printf("reconstructed data (in float) differ from the original (%d out of %d)\n", outliers, N);
+    
     free(f); free(fx); free(fr);
   }
 
@@ -96,6 +121,8 @@ int main(int argc, char *argv[])
 
   /* Finding the differences between two binary files
      $ cmp fileA fileB
+     or
+     $ diff fileA fileB
    */
   
   return 0;
