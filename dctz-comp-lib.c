@@ -414,7 +414,7 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #ifdef USE_TRUNCATE
 	  AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
 #else
-	  AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] | a_x.f[i*BLK_SZ+j]);;
+	  AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);;
 #endif /* USE_TRUNCATE */
 	}
 	else
@@ -427,7 +427,7 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #ifdef USE_TRUNCATE
 	AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
 #else
-	AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] | a_x.f[i*BLK_SZ+j]); /* in case of FLOAT, casting to double makes sense? */
+	AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]); /* in case of FLOAT, casting to double makes sense? */
 #endif
 #endif /* USE_QTABLE */
       }
