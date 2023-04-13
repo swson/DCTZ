@@ -184,11 +184,19 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif  
   uLong compSize_binindex = compressBound(ucompSize_binindex);
 
-  uLong ucompSize_DC = nblk*sizeof(float); /*  float or double? */
+#ifdef USE_TRUNCATE
+  uLong ucompSize_DC = nblk*sizeof(float);
   uLong compSize_DC = compressBound(ucompSize_DC);
 
   uLong ucompSize_AC_exact = N*sizeof(float); /* tot_ac_exact instead of N? */
   uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
+#else
+  uLong ucompSize_DC = nblk*sizeof(double);
+  uLong compSize_DC = compressBound(ucompSize_DC);
+
+  uLong ucompSize_AC_exact = N*sizeof(double); /* tot_ac_exact instead of N? */
+  uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
+#endif
 
   /* setup for decompress */
   z_stream infstream[3];
