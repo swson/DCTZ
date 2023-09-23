@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
   inFilePath = argv[2];
   sprintf(outFilePath, "%s.r", inFilePath);
   
-  fin = fopen(inFilePath, "rb");
+  fin = fopen(inFilePath, "r");
 
   if (!strcmp(argv[1], "-d")) { /* double */
     d = malloc(sizeof(double)*N);
@@ -74,9 +74,9 @@ int main(int argc, char *argv[])
     int outliers=0;
     for (int i=0; i<N; i++) {
       if ((d[i]-dr[i]) > DBL_EPSILON) {
-	outliers++;
 	if (outliers < 5)
 	  printf("reconstruction error=%e\n", d[i]-dr[i]);
+	outliers++;
       }
     }
 
@@ -104,9 +104,9 @@ int main(int argc, char *argv[])
     int outliers=0;
     for (int i=0; i<N; i++) {
       if ((f[i]-fr[i]) > FLT_EPSILON) {
-	outliers++;
 	if (outliers < 5)
 	  printf("reconstruction error=%e\n", f[i]-fr[i]);
+	outliers++;
       }
     }
 
