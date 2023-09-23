@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <float.h>
 #include "dctz.h"
 
 /* gcc -o dct-test dct-test.c dct.c dct-float.c util.c -lfftw3 -lfftw3f -lm -Wall -g */
@@ -19,8 +20,8 @@ int main(int argc, char * argv[])
   size_t r4=0,r3=0,r2=0,r1=0;
   size_t typesize = 0;
   char *oriFilePath, outputFilePath[640];
-  double *d, *d_x;
-  float *f, *f_x;
+  double *d, *d_x, *d_r;
+  float *f, *f_x, *f_r;
   int datatype;
   int N, i, nblk, rem;
   
@@ -120,7 +121,7 @@ int main(int argc, char * argv[])
   
   sprintf(outputFilePath, "%s.x", oriFilePath);
 
-  fp_x = fopen(outputFilePath, "wb");
+  fp_x = fopen(outputFilePath, "w");
   if (datatype == DOUBLE)
     icount = fwrite(d_x, outSize, 1, fp_x);
   else /* float */
@@ -131,11 +132,88 @@ int main(int argc, char * argv[])
   }
   fclose(fp_x);
 
+  /* IDCT */
+  if (!strcmp(argv[1], "-d")) { /* double */
+    typesize = sizeof(double);
+    datatype = DOUBLE;
+
+    if (NULL == (d_r = (double *)malloc(N*typesize))) {
+      fprintf(stderr, "Out of memory: a_z\n");
+      exit(1);
+    }
+    dct_init(BLK_SZ);
+    for (i=0; i<nblk; i++) {
+      int l_blk_sz = ((i==nblk-1)&&(rem!=0))?rem:BLK_SZ;
+      if ((i==nblk-1)&&(rem!=0)) {
+	dct_finish();
+	dct_init(rem);
+      }
+      ifft_idct(l_blk_sz, d_x+i*BLK_SZ, d_r+i*BLK_SZ);
+    }
+    dct_finish();
+  } 
+  else { /* float */
+    typesize = sizeof(float);
+    datatype = FLOAT;
+
+    if (NULL == (f_r = (float *)malloc(N*typesize))) {
+      fprintf(stderr, "Out of memory: a\n");
+      exit(1);
+    }
+    dct_init_f(BLK_SZ);
+    for (i=0; i<nblk; i++) {
+      int l_blk_sz = ((i==nblk-1)&&(rem!=0))?rem:BLK_SZ;
+      if ((i==nblk-1)&&(rem!=0)) {
+	dct_finish_f();
+	dct_init_f(rem);
+      }
+      ifft_idct_f(l_blk_sz, f_x+i*BLK_SZ, f_r+i*BLK_SZ);
+    }
+    dct_finish_f();
+  }	  
+
+  FILE *fp_r;
+  sprintf(outputFilePath, "%s.r", oriFilePath);
+
+  fp_r = fopen(outputFilePath, "w");
+  if (datatype == DOUBLE)
+    icount = fwrite(d_r, outSize, 1, fp_r);
+  else /* float */
+    icount = fwrite(f_r, outSize, 1, fp_r);
+  if (icount != 1) {
+    printf("Write the reconstructed file failed: %lu != %d!\n", outSize, icount);
+    exit(1);
+  }
+  fclose(fp_r);
+
+  int outliers=0;
+  if (!strcmp(argv[1], "-d")) { /* double */
+    for (int i=0; i<N; i++) {
+      if ((d[i]-d_r[i]) > DBL_EPSILON) {
+	if (outliers < 5)
+          printf("reconstruction error=%e\n", d[i]-d_r[i]);
+        outliers++;
+      }
+    }
+    
+    if (outliers != 0)
+      printf("reconstructed data (in double) differ from the original (%d out of %d)\n", outliers, N);
+  }
+  else {
+    for (int i=0; i<N; i++) {
+      if ((f[i]-f_r[i]) > FLT_EPSILON) {
+	if (outliers < 5)
+          printf("reconstruction error=%e\n", f[i]-f_r[i]);
+        outliers++;
+      }
+    }
+  }
+    
   if (datatype == DOUBLE) { /* double */
-    free(d); free(d_x);
+    free(d); free(d_x); free(d_r);
   }
   else { /* float */
-    free(f); free(f_x);
+    free(f); free(f_x); free(f_r);
   }
   printf("done\n");
 
