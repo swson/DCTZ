@@ -3,8 +3,8 @@
  * @author Seung Woo Son
  * @date July 2019
  * @brief DCTZ compression library routine
- * (C) 2019 University of Massachuetts Lowell.
-       See LICENSE in top-level directory.
+ * (C) 2019 University of Massachusetts Lowell.
+       See LICENSE in the top-level directory.
 */
 
 #include <stdlib.h>
@@ -144,28 +144,26 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #ifdef DEBUG
     printf("scaling factor = %f\n", bs.sf.d);
 #endif
-    double xscale = pow(10, bs.sf.d - 1);
     /* apply scaling factor */
-    if (bs.sf.d != 1.0) {
+    if (bs.sf.d != pow(10, 1.0)) {
 #ifdef _OPENMP
 #pragma omp parallel for private(i) shared(bs.sf.d)
 #endif
       for (i=0; i<N; i++)
-	var->buf.d[i] /= xscale;
+	var->buf.d[i] /= bs.sf.d;
     }
   }
   else { /* FLOAT */
 #ifdef DEBUG
     printf("scaling factor = %f\n", bs.sf.f);
 #endif
-    float xscale = pow(10, bs.sf.f - 1);
     /* apply scaling factor */
-    if (bs.sf.f != 1.0) {
+    if (bs.sf.f != pow(10, 1.0)) {
 #ifdef _OPENMP
 #pragma omp parallel for private(i) shared(bs.sf.f)
 #endif
       for (i=0; i<N; i++)
-	var->buf.f[i] /= xscale;
+	var->buf.f[i] /= bs.sf.f;
     }
   }
   

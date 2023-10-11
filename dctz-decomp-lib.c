@@ -3,8 +3,8 @@
  * @author Seung Woo Son
  * @date July 2019
  * @brief DCTZ decompression library routine
- * (C) 2019 University of Massachuetts Lowell.
-       See LICENSE in top-level directory.
+ * (C) 2019 University of Massachusetts Lowell.
+       See LICENSE in the top-level directory.
 */
 
 #include <stdio.h>
@@ -449,19 +449,17 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
 
   if (datatype == DOUBLE) {
-    double xscale = pow(10, h.scaling_factor.d - 1);
     /*  deapply scaling factor */
-    if (h.scaling_factor.d != 1.0) {
+    if (h.scaling_factor.d != pow(10, 1.0)) {
       for (i=0; i<N; i++)
-	var_r->buf.d[i] *= xscale;
+	var_r->buf.d[i] *= h.scaling_factor.d;
     }
   }
   else { /* FLOAT */
-    float xscale = pow(10, h.scaling_factor.f - 1);
     /* deapply scaling factor */
-    if (h.scaling_factor.f != 1.0) {
+    if (h.scaling_factor.f != pow(10, 1.0)) {
       for (i=0; i<N; i++)
-	var_r->buf.f[i] *= xscale;
+	var_r->buf.f[i] *= h.scaling_factor.f;
     }
   }
 

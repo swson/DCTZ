@@ -3,8 +3,8 @@
  * @author Seung Woo Son
  * @date July 2019
  * @brief DCT implementation using FFTW
- * (C) 2019 University of Massachuetts Lowell.
-       See LICENSE in top-level directory.
+ * (C) 2019 University of Massachusetts Lowell.
+       See LICENSE in the top-level directory.
 */
 
 #include <stdio.h>

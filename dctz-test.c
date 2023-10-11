@@ -3,8 +3,8 @@
  * @author Seung Woo Son
  * @date July 2019
  * @brief DCTZ test program for Z-Checker
- * (C) 2019 University of Massachuetts Lowell.
-       See LICENSE in top-level directory.
+ * (C) 2019 University of Massachusetts Lowell.
+       See LICENSE in the top-level directory.
 */
 
 #include <stdio.h>
@@ -188,22 +188,20 @@ int main(int argc, char * argv[])
   struct header h;
   if (datatype == DOUBLE) {
     memcpy(&h, var_z->buf.d, sizeof(struct header));
-    double xscale = pow(10, h.scaling_factor.d - 1);
     /* deapply scaling factor */
-    if (h.scaling_factor.d != 1.0) {
+    if (h.scaling_factor.d != pow(10, 1.0)) {
       int i;
       for (i=0; i<N; i++)
-	var->buf.d[i] *= xscale;
+	var->buf.d[i] *= h.scaling_factor.d;
     }
   }
   else { /* FLOAT */
     memcpy(&h, var_z->buf.f, sizeof(struct header));
-    float xscale = pow(10, h.scaling_factor.f - 1);
     /* deapply scaling factor */
-    if (h.scaling_factor.f != 1.0) {
+    if (h.scaling_factor.f != pow(10, 1.0)) {
       int i;
       for (i=0; i<N; i++)
-	var->buf.f[i] *= xscale;
+	var->buf.f[i] *= h.scaling_factor.f;
     }
   }
 

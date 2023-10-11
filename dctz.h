@@ -3,8 +3,8 @@
  * @author Seung Woo Son
  * @date July 2019
  * @brief header for DCTZ routines
- * (C) 2019 University of Massachuetts Lowell.
-       See LICENSE in top-level directory.
+ * (C) 2019 University of Massachusetts Lowell.
+       See LICENSE in the top-level directory.
 */
 
 #ifndef _DCTZ_H_
@@ -26,7 +26,8 @@
 #define DCTZ_VERSION_PATCH 1
 
 #define BLK_SZ 64
-#define BRSF 1 /* bin range scaling factor: 1: no scaling */
+#define BRSF 1 /* bin range scaling factor: 1 means no scaling */
+#define SF_ADJ_AMT 1 /* scaling factor adjustment amount */
 
 #define MAX(a,b) \
   ({ __typeof__ (a) _a = (a); \

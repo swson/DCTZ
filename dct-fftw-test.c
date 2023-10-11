@@ -3,8 +3,8 @@
  * @author Seung Woo Son
  * @date April 2023
  * @brief DCT routine using fftw3
- * (C) 2023 University of Massachuetts Lowell.
-       See LICENSE in top-level directory.
+ * (C) 2023 University of Massachusetts Lowell.
+       See LICENSE in the top-level directory.
 */
 
 // gcc -o dct-fftw-test dct-fftw-test.c -lm -lfftw3 -lfftw3f

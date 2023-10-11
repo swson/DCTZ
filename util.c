@@ -3,8 +3,8 @@
  * @author Seung Woo Son
  * @date July 2019
  * @brief utility routines
- * (C) 2019 University of Massachuetts Lowell.
-       See LICENSE in top-level directory.
+ * (C) 2019 University of Massachusetts Lowell.
+       See LICENSE in the top-level directory.
 */
 
 #include "dctz.h"
@@ -22,7 +22,7 @@ void calc_data_stat(t_var *in, t_bstat *bs, int N)
       if (fabs(in->buf.d[i]) < bs->min.d) bs->min.d = fabs(in->buf.d[i]);
     }
 
-    bs->sf.d = ceil(log10(bs->max.d));
+    bs->sf.d = pow(10, ceil(log10(bs->max.d)) - SF_ADJ_AMT);
   }
   else { /* FLOAT */
     bs->max.f = fabs(in->buf.f[0]);
@@ -33,7 +33,7 @@ void calc_data_stat(t_var *in, t_bstat *bs, int N)
       if (fabs(in->buf.f[i]) < bs->min.f) bs->min.f = fabs(in->buf.f[i]);
     }
 
-    bs->sf.f = ceil(log10(bs->max.f));
+    bs->sf.f = pow(10, ceil(log10(bs->max.f)) - SF_ADJ_AMT);
   }
 }
 
