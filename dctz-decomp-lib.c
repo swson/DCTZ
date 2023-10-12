@@ -450,14 +450,14 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 
   if (datatype == DOUBLE) {
     /*  deapply scaling factor */
-    if (h.scaling_factor.d != pow(10, 1.0)) {
+    if (h.scaling_factor.d != 1.0) {
       for (i=0; i<N; i++)
 	var_r->buf.d[i] *= h.scaling_factor.d;
     }
   }
   else { /* FLOAT */
     /* deapply scaling factor */
-    if (h.scaling_factor.f != pow(10, 1.0)) {
+    if (h.scaling_factor.f != 1.0) {
       for (i=0; i<N; i++)
 	var_r->buf.f[i] *= h.scaling_factor.f;
     }

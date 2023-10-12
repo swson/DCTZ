@@ -145,7 +145,7 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
     printf("scaling factor = %f\n", bs.sf.d);
 #endif
     /* apply scaling factor */
-    if (bs.sf.d != pow(10, 1.0)) {
+    if (bs.sf.d != 1.0) {
 #ifdef _OPENMP
 #pragma omp parallel for private(i) shared(bs.sf.d)
 #endif
@@ -158,7 +158,7 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
     printf("scaling factor = %f\n", bs.sf.f);
 #endif
     /* apply scaling factor */
-    if (bs.sf.f != pow(10, 1.0)) {
+    if (bs.sf.f != 1.0) {
 #ifdef _OPENMP
 #pragma omp parallel for private(i) shared(bs.sf.f)
 #endif

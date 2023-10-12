@@ -189,7 +189,7 @@ int main(int argc, char * argv[])
   if (datatype == DOUBLE) {
     memcpy(&h, var_z->buf.d, sizeof(struct header));
     /* deapply scaling factor */
-    if (h.scaling_factor.d != pow(10, 1.0)) {
+    if (h.scaling_factor.d != 1.0) {
       int i;
       for (i=0; i<N; i++)
 	var->buf.d[i] *= h.scaling_factor.d;
@@ -198,7 +198,7 @@ int main(int argc, char * argv[])
   else { /* FLOAT */
     memcpy(&h, var_z->buf.f, sizeof(struct header));
     /* deapply scaling factor */
-    if (h.scaling_factor.f != pow(10, 1.0)) {
+    if (h.scaling_factor.f != 1.0) {
       int i;
       for (i=0; i<N; i++)
 	var->buf.f[i] *= h.scaling_factor.f;
