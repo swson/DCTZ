@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     fftw_execute(plan_inv);
 
     /* FFTW doesn't rescale the output of the transform,
-     * so the result must be divised by 2*N
+     * so the result must be divided by 2*N
      */
     for (int i=0; i<N; i++)
       dr[i] /= 2.0*N;
