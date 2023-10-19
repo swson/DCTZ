@@ -188,26 +188,36 @@ int main(int argc, char * argv[])
 
   int outliers=0;
   if (!strcmp(argv[1], "-d")) { /* double */
+    double max_diff = 0.0;
     for (int i=0; i<N; i++) {
-      if ((d[i]-d_r[i]) > DBL_EPSILON) {
+      double diff = fabs(d[i]-d_r[i]);
+      if (diff > DBL_EPSILON) {
 	if (outliers < 5)
-          printf("reconstruction error=%e\n", d[i]-d_r[i]);
+          printf("reconstruction error=%e\n", diff);
         outliers++;
       }
+      if (diff > max_diff)
+	max_diff = diff;
     }
-    
-    if (outliers != 0)
-      printf("reconstructed data (in double) differ from the original (%d out of %d)\n", outliers, N);
+    printf("max_diff=%e\n", max_diff);
   }
   else {
+    float max_diff = 0.0;
     for (int i=0; i<N; i++) {
-      if ((f[i]-f_r[i]) > FLT_EPSILON) {
+      float diff = fabsf(f[i]-f_r[i]);
+      if (diff > FLT_EPSILON) {
 	if (outliers < 5)
-          printf("reconstruction error=%e\n", f[i]-f_r[i]);
+          printf("reconstruction error=%e\n", diff);
         outliers++;
       }
+      if (diff > max_diff)
+	max_diff = diff;
     }
+    printf("max_diff=%e\n", max_diff);
   }
+
+  if (outliers != 0)
+    printf("reconstructed data (in double) differ from the original (%d out of %d)\n", outliers, N);
     
   if (datatype == DOUBLE) { /* double */
     free(d); free(d_x); free(d_r);
