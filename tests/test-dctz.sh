@@ -7,7 +7,7 @@ BIN_FILE=bin_index.bin
 
 # wget https://sites.uml.edu/seungwoo-son/files/2019/07/dctz-test-data.zip
 
-for f in 'sedov-chk139-dens.bin 31040' 'cellular-0249.bin 32768' 'rlds.bin 12960' 'mrsos.bin 12960' 'eddy-chk50-pres.bin 16384' 'vortex-chk50-pres.bin 37024'
+while IFS="" read -r f || [ -n "$f" ]
 do
     for i in '1E-3' '1E-4' '1E-5'
     do
@@ -42,4 +42,4 @@ do
 	    echo "$FILE does not exist"
 	fi
     done
-done
+done < list-msst19.txt

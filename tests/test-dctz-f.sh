@@ -8,7 +8,7 @@ BIN_FILE=bin_index.bin
 #wget http://www.mcs.anl.gov/~shdi/download/CESM-ATM-tylor.tar.gz
 #tar xvfz CESM-ATM-tylor.tar.gz
 
-for f in 'CESM-ATM-tylor/1800x3600/CLDHGH_1_1800_3600.dat 3600 1800' 'CESM-ATM-tylor/1800x3600/CLDLOW_1_1800_3600.dat 3600 1800' 'CESM-ATM-tylor/1800x3600/FLDSC_1_1800_3600.dat 3600 1800' 'CESM-ATM-tylor/1800x3600/FREQSH_1_1800_3600.dat 3600 1800' 'CESM-ATM-tylor/1800x3600/PHIS_1_1800_3600.dat 3600 1800'
+while IFS="" read -r f || [ -n "$f" ]
 do
     for i in '1E-3' '1E-4' '1E-5'
     do
@@ -43,4 +43,4 @@ do
 	    echo "$FILE does not exist"
 	fi
     done
-done
+done < list-CESM-ATM-tylor.txt

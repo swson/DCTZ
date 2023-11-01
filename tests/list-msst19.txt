@@ -1,0 +1,6 @@
+sedov-chk139-dens.bin 31040
+cellular-0249.bin 32768
+rlds.bin 12960
+mrsos.bin 12960
+eddy-chk50-pres.bin 16384
+vortex-chk50-pres.bin 37024
