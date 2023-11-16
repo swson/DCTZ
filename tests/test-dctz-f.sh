@@ -28,6 +28,8 @@ do
 	    echo "$FILE does not exist"
 	fi
 
+	echo ""
+
 	echo running dctz-qt-test $f $i
 	../dctz-qt-test -f $i var $f 2>&1 | tee dctz-qt-comp.$X.$i.log
 	if [ -f "$FILE" ]; then
@@ -42,5 +44,7 @@ do
 	else
 	    echo "$FILE does not exist"
 	fi
+
+	echo ""
     done
 done < list-CESM-ATM-tylor.txt

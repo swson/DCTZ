@@ -26,6 +26,8 @@ do
 	else
 	    echo "$FILE does not exist"
 	fi
+
+	echo ""
 	
 	echo running dctz-qt-test $f $i
 	../dctz-qt-test -d $i var $f 2>&1 | tee dctz-qt-comp.$X.$i.log
@@ -41,5 +43,7 @@ do
 	else
 	    echo "$FILE does not exist"
 	fi
+
+	echo ""
     done
 done < list-msst19.txt
