@@ -36,11 +36,11 @@ void dct_init_f(int dn)
   
   /* Compute weights to multiply DFT coefficients */
   for (i=0; i<dn; i++) {
-    y = -i*M_PI/(2*dn);
-    as[i] = exp(x)*cos(y)/sqrt(2.0*dn);
-    ax[i] = exp(x)*sin(y)/sqrt(2.0*dn);
+    y = -i*(float)M_PI/(2*dn);
+    as[i] = expf(x)*cosf(y)/sqrtf(2.0*dn);
+    ax[i] = expf(x)*sinf(y)/sqrtf(2.0*dn);
   }
-  as[0] = as[0]/sqrt(2.0);
+  as[0] = as[0]/sqrtf(2.0);
   if (!(dn%2)) {
     for (i=0; i<dn; i++) {
       as[i] = as[i]*2;
@@ -131,9 +131,9 @@ void ifft_idct_f(int dn, float *a,  float *data)
 
     /* Compute weights to multiply IDFT coefficients */
     for (i = 0; i < dn; i++) {
-      y = i*M_PI/(2*dn);
-      ias[i] = exp(x)*cos(y)*sqrt(2.0*dn);
-      iax[i] = exp(x)*sin(y)*sqrt(2.0*dn);
+      y = i*(float)M_PI/(2*dn);
+      ias[i] = expf(x)*cosf(y)*sqrtf(2.0*dn);
+      iax[i] = expf(x)*sinf(y)*sqrtf(2.0*dn);
     }
 #ifdef DCT_DEBUG
     for (i=0; i<dn; i++) {
@@ -145,7 +145,7 @@ void ifft_idct_f(int dn, float *a,  float *data)
   memset(out, 0, sizeof(fftwf_complex)*dn*2);
   
   if (dn%2 == 1) { /* for odd */
-    ias_0 = ias[0] * sqrt(2.0);
+    ias_0 = ias[0] * sqrtf(2.0);
     in[0][0] = ias_0*a[0];
     in[0][1] = iax[0]*a[0];
 
@@ -166,7 +166,7 @@ void ifft_idct_f(int dn, float *a,  float *data)
       data[i] = out[i][0] / dn / 2;
     }
   } else { /* for even */
-    ias_0 = ias[0] / sqrt(2.0);
+    ias_0 = ias[0] / sqrtf(2.0);
     in[0][0] = ias_0*a[0];
     in[0][1] = iax[0]*a[0];
 
