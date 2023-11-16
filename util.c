@@ -25,15 +25,15 @@ void calc_data_stat(t_var *in, t_bstat *bs, int N)
     bs->sf.d = pow(10, ceil(log10(bs->max.d)) - SF_ADJ_AMT);
   }
   else { /* FLOAT */
-    bs->max.f = fabs(in->buf.f[0]);
-    bs->min.f = fabs(in->buf.f[0]);
+    bs->max.f = fabsf(in->buf.f[0]);
+    bs->min.f = fabsf(in->buf.f[0]);
 
     for (i=1; i<N; i++) {
-      if (fabs(in->buf.f[i]) > bs->max.f) bs->max.f = fabs(in->buf.f[i]);
-      if (fabs(in->buf.f[i]) < bs->min.f) bs->min.f = fabs(in->buf.f[i]);
+      if (fabsf(in->buf.f[i]) > bs->max.f) bs->max.f = fabsf(in->buf.f[i]);
+      if (fabsf(in->buf.f[i]) < bs->min.f) bs->min.f = fabsf(in->buf.f[i]);
     }
 
-    bs->sf.f = pow(10, ceil(log10(bs->max.f)) - SF_ADJ_AMT);
+    bs->sf.f = powf(10, ceil(log10f(bs->max.f)) - SF_ADJ_AMT);
   }
 }
 
