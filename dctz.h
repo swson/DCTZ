@@ -20,10 +20,10 @@
 #include "zlib.h"
 #include "dct.h"
 
-#define DCTZ_VERSION "0.2.1"
+#define DCTZ_VERSION "0.2.2"
 #define DCTZ_VERSION_MAJOR 0
 #define DCTZ_VERSION_MINOR 2
-#define DCTZ_VERSION_PATCH 1
+#define DCTZ_VERSION_PATCH 2
 
 #define BLK_SZ 64
 #define BRSF 1.0 /* bin range scaling factor: 1 means no scaling */
@@ -63,9 +63,14 @@ typedef struct
 typedef unsigned char t_bin_id;
 
 #define NBITS (sizeof(t_bin_id)<<3) /* # of bits (8 or 16) for representing bin index */
-#define NBINS ((1 << (NBITS)) - 1)
+#define NBINS ((1 << (NBITS)) - 1) /* e.g., if NBITS=8, 255 (0-254) */
 
 typedef struct {
+  union
+  {
+    double d;
+    float f;
+  } mean;
   union
   {
     double d;
@@ -99,6 +104,11 @@ struct header
     double d;
     float f;
   } scaling_factor;
+  union
+  {
+    double d;
+    float f;
+  } mean;
   unsigned int bindex_sz_compressed;
   unsigned int DC_sz_compressed;
   unsigned int AC_exact_sz_compressed;
@@ -110,8 +120,8 @@ struct header
 
 void calc_data_stat(t_var *in, t_bstat *bs, int N);
 int ceili(double i);
-void gen_bins(double min, double max, double *bin_maxes, double *bin_center, int nbins, double error_bound);
-void gen_bins_f(float min, float max, float *bin_maxes, float *bin_center, int nbins, float error_bound);
+void gen_bins(double min, double max, double *bin_center, int nbins, double error_bound);
+void gen_bins_f(float min, float max, float *bin_center, int nbins, float error_bound);
 void *compress_thread(void *arg);
 int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error_bound);
 int dctz_decompress(t_var *var_z, t_var *var_r);

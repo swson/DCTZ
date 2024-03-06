@@ -191,8 +191,10 @@ int main(int argc, char * argv[])
     /* deapply scaling factor */
     if (h.scaling_factor.d != 1.0) {
       int i;
-      for (i=0; i<N; i++)
+      for (i=0; i<N; i++) {
 	var->buf.d[i] *= h.scaling_factor.d;
+	//var->buf.d[i] += (h.mean.d)/h.scaling_factor.d;
+      }
     }
   }
   else { /* FLOAT */
@@ -200,8 +202,10 @@ int main(int argc, char * argv[])
     /* deapply scaling factor */
     if (h.scaling_factor.f != 1.0) {
       int i;
-      for (i=0; i<N; i++)
+      for (i=0; i<N; i++) {
 	var->buf.f[i] *= h.scaling_factor.f;
+	//var->buf.f[i] += (h.mean.f)/h.scaling_factor.f;
+      }
     }
   }
 
@@ -270,7 +274,7 @@ int main(int argc, char * argv[])
   double cr, psnr;
   cr = (double)(N*type_size)/(double)outSize;
   psnr = calc_psnr(var, var_r, N, error_bound);
-  printf("CR = %f, PSNR = %f\n", cr, psnr);
+  printf("CR = %.2f, PSNR = %.2f\n", cr, psnr);
 
   free(var_z);
   free(var_r);

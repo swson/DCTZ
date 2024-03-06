@@ -22,7 +22,43 @@
 #include "dctz.h"
 #include "dct.h"
 
-#define DEF_MEM_LEVEL 8
+#define DEF_MEM_LEVEL 8 // 8 (default), 9 uses maximum memory for optimal speed
+
+t_bin_id conv_tbl[NBINS] = {
+  254, 252, 250, 248, 246, 244, 242, 240, 238, 236, 234, 232, 230, 228, 226, 224,
+  222, 220, 218, 216, 214, 212, 210, 208, 206, 204, 202, 200, 198, 196, 194, 192,
+  190, 188, 186, 184, 182, 180, 178, 176, 174, 172, 170, 168, 166, 164, 162, 160,
+  158, 156, 154, 152, 150, 148, 146, 144, 142, 140, 138, 136, 134, 132, 130, 128,
+  126, 124, 122, 120, 118, 116, 114, 112, 110, 108, 106, 104, 102, 100, 98,  96,
+  94,  92,  90,  88,  86,  84,  82,  80,  78,  76,  74,  72,  70,  68,  66,  64,
+  62,  60,  58,  56,  54,  52,  50,  48,  46,  44,  42,  40,  38,  36,  34,  32,
+  30,  28,  26,  24,  22,  20,  18,  16,  14,  12,  10,  8,   6,   4,   2,   0,
+  1,   3,   5,   7,   9,   11,  13,  15,  17,  19,  21,  23,  25,  27,  29,  31,
+  33,  35,  37,  39,  41,  43,  45,  47,  49,  51,  53,  55,  57,  59,  61,  63,
+  65,  67,  69,  71,  73,  75,  77,  79,  81,  83,  85,  87,  89,  91,  93,  95,
+  97,  99,  101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 127,
+  129, 131, 133, 135, 137, 139, 141, 143, 145, 147, 149, 151, 153, 155, 157, 159,
+  161, 163, 165, 167, 169, 171, 173, 175, 177, 179, 181, 183, 185, 187, 189, 191,
+  193, 195, 197, 199, 201, 203, 205, 207, 209, 211, 213, 215, 217, 219, 221, 223,
+  225, 227, 229, 231, 233, 235, 237, 239, 241, 243, 245, 247, 249, 251, 253};
+
+// 1, 2, 9, 17, 10, 3, 4, 11,
+// 18, 25, 33, 26, 19, 12, 5, 6,
+// 13, 20, 27, 34, 41, 49, 52, 35,
+// 28, 21, 14, 7, 8, 15, 22, 29,
+// 36, 43, 50, 57, 58, 51, 44, 37,
+// 30, 23, 16, 24, 31, 38, 45, 52,
+// 59, 60, 53, 46, 39, 32, 40, 47,
+// 54, 61, 62, 55, 48, 56, 63, 64
+t_bin_id zigzag[BLK_SZ] = {
+  0,  1,  8,  16, 9,  2,  3,  10,
+  17, 24, 32, 25, 18, 11, 4,  5,
+  12, 19, 26, 33, 40, 48, 51, 34,
+  27, 20, 13, 6,  7,  14, 21, 28,
+  35, 42, 49, 56, 57, 50, 43, 36,
+  29, 22, 15, 23, 30, 37, 44, 51,
+  58, 59, 52, 45, 38, 31, 39, 46,
+  53, 60, 61, 54, 47, 55, 62, 63};
 
 union 
 {
@@ -30,7 +66,13 @@ union
   double *d;
 } a, a_x;
 
-void *compress_thread (void *arg)
+union 
+{
+  float f;
+  double d;
+} bin_width, range_min, range_max, qt_factor;
+
+void *compress_thread(void *arg)
 {
   z_stream *defstream = (z_stream *)arg;
 #ifdef DEBUG
@@ -48,11 +90,14 @@ void *compress_thread (void *arg)
 int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error_bound)
 {
   int i, j, nblk, rem;
+  //double TRUNC_BITS = (1.0/pow(error_bound, 1.55));
+  //double TRUNC_BITS = pow(10.0, (ceil(abs(log2(error_bound)))/2.0)+2.0);
+  //double TRUNC_BITS = pow(10.0, (ceil(abs(log2(error_bound))))-4.0);
+  //float TRUNC_BITS = (1.0/(error_bound/0.01));
 #ifdef TIME_DEBUG
   struct timeval start_t, end_t, gstart_t;
   double sf_t, dct_t, DC_AC_t, zlib_t, comp_t, malloc_t, genbin_t;
 #endif
-  double *bin_maxes, *bin_center, bin_width, range_min, range_max;
   t_bin_id *bin_index, *bin_indexz, *bin_indexz2;
 #ifdef USE_TRUNCATE
   float *DC, *DCz, *DCz2, *AC_exact, *AC_exactz, *AC_exactz2;
@@ -63,7 +108,10 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   t_bstat bs;
   size_t type_size = 0; 
 #ifdef USE_QTABLE
-  double *qtable;  /* Quantizer Table */
+  union {
+    double *d;
+    float *f;
+  } qtable;  /* Quantizer Table */
 #endif
 
   if (var->datatype == DOUBLE)
@@ -89,17 +137,6 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
     exit(1);
   }
 
-  /* TODO: bin_maxes and bin_center should be double or float? */
-  if (NULL == (bin_maxes = (double *)malloc(NBINS*sizeof(double)))) {
-    fprintf(stderr, "Out of memory: bin_maxes\n");
-    exit(1);
-  }
-
-  if (NULL == (bin_center = (double *)malloc(NBINS*sizeof(double)))) {
-    fprintf(stderr, "Out of memory: bin_center\n");
-    exit(1);
-  }
-
 #ifdef DEBUG
   for (i=0; i<BLK_SZ; i++) { /* show the first block */
     printf("a[%d] = %e\n", i, var->buf.d[i]); 
@@ -107,30 +144,38 @@ int dctz_compress(t_var *var, int N, size_t *outSize, t_var *var_z, double error
   }
 #endif
 
-if (NULL == (bin_index = (t_bin_id *)malloc(N*sizeof(t_bin_id)))) {
-  fprintf(stderr, "Out of memory: bin_index[]\n");
-  exit(1);
-}
-memset(bin_index, 0, sizeof(t_bin_id)*N);
-
-#ifdef USE_QTABLE
-  /* Start of Initialize  Quantizer Table */
-  if (NULL == (qtable = (double *)malloc(BLK_SZ*sizeof(double)))) {
-    fprintf(stderr, "Out of memory: qtable\n");
+  if (NULL == (bin_index = (t_bin_id *)malloc(N*sizeof(t_bin_id)))) {
+    fprintf(stderr, "Out of memory: bin_index[]\n");
     exit(1);
   }
-  
-  for (i=0; i<BLK_SZ; i++) {
-    qtable[i] = 0.0;
-  }
-#endif /* USE_QTABLE */
+  memset(bin_index, 0, sizeof(t_bin_id)*N);
 
+#ifdef USE_QTABLE
+  /* allocate space for qtable and initialize it */
+  if (var->datatype == DOUBLE) {
+    if (NULL == (qtable.d = (double *)malloc(BLK_SZ*sizeof(double)))) {
+      fprintf(stderr, "Out of memory: qtable\n");
+      exit(1);
+    }
+    for (i=0; i<BLK_SZ; i++) {
+      qtable.d[i] = 0.0;
+    }
+  }
+  else { /* FLOAT */
+    if (NULL == (qtable.f = (float *)malloc(BLK_SZ*sizeof(float)))) {
+      fprintf(stderr, "Out of memory: qtable\n");
+      exit(1);
+    }
+    for (i=0; i<BLK_SZ; i++) {
+      qtable.f[i] = 0.0;
+    }
+  }
 #ifdef DEBUG
   for (i=0; i<BLK_SZ; i++) {
-    printf("qtable[%d] = %e\n", i, qtable[i]);
+    printf("qtable[%d] = %e\n", i, (var->datatype == DOUBLE ? qtable.d[i] : qtable.f[i]));
   }
-#endif
-  /* End of Initialize  Quantizer Table */
+#endif /* DEBUG */
+#endif /* USE_QTABLE */
 
 #ifdef TIME_DEBUG
   gettimeofday(&start_t, NULL);
@@ -149,8 +194,10 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #ifdef _OPENMP
 #pragma omp parallel for private(i) shared(bs.sf.d)
 #endif
-      for (i=0; i<N; i++)
+      for (i=0; i<N; i++) {
 	var->buf.d[i] /= bs.sf.d;
+	//var->buf.d[i] -= (bs.mean.d)/bs.sf.d;
+      }
     }
   }
   else { /* FLOAT */
@@ -162,8 +209,10 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #ifdef _OPENMP
 #pragma omp parallel for private(i) shared(bs.sf.f)
 #endif
-      for (i=0; i<N; i++)
+      for (i=0; i<N; i++) {
 	var->buf.f[i] /= bs.sf.f;
+	//var->buf.f[i] -= bs.mean.f/bs.sf.f;
+      }
     }
   }
   
@@ -217,17 +266,19 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
   malloc_t = (double)((end_t.tv_sec*1000000 + end_t.tv_usec)-(start_t.tv_sec*1000000 + start_t.tv_usec));
 
   gettimeofday(&start_t, NULL);
-#endif
-
-  if (var->datatype == DOUBLE)
-    gen_bins(bs.min.d, bs.max.d, bin_maxes, bin_center, NBINS, error_bound);
-  else /* FLOAT */
-    gen_bins(bs.min.f, bs.max.f, bin_maxes, bin_center, NBINS, error_bound);
+#endif /* TIME_DEBUG */
 
   int half = NBINS/2;
-  bin_width = error_bound*2*BRSF;
-  range_min = -(half*2+1)*(error_bound*BRSF);
-  range_max = (half*2+1)*(error_bound*BRSF);
+  if (var->datatype == DOUBLE) {
+    bin_width.d = error_bound*2.0*BRSF;
+    range_min.d = -(half*2+1)*(error_bound*BRSF);
+    range_max.d = (half*2+1)*(error_bound*BRSF);
+  }
+  else { /* FLOAT */
+    bin_width.f = error_bound*2.0*BRSF;
+    range_min.f = -(half*2+1)*(error_bound*BRSF);
+    range_max.f = (half*2+1)*(error_bound*BRSF);
+  }
 
 #ifdef TIME_DEBUG
   gettimeofday(&end_t, NULL);
@@ -297,9 +348,15 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #endif
     
 #ifdef USE_TRUNCATE
-    DC[i] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ] : a_x.f[i*BLK_SZ]); /* save DC component in truncated*/
+    DC[i] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ] : a_x.f[i*BLK_SZ]); /* save DC component in truncated */
 #else
     DC[i] = (double)a_x.d[i*BLK_SZ]; /* save DC component */
+#endif
+#ifdef USE_QTABLE
+    if (var->datatype == DOUBLE)
+      qtable.d[0] = a_x.d[i*BLK_SZ];
+    else /* FLOAT */
+      qtable.f[0] = a_x.f[i*BLK_SZ];
 #endif
     bin_index[i*BLK_SZ] = NBINS; /* store as it is */
 
@@ -307,16 +364,19 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
       if (var->datatype == DOUBLE) {
 	double item = a_x.d[i*BLK_SZ+j];
 	t_bin_id bin_id;
-	if (item < range_min || item > range_max) {
+	if (item < range_min.d || item > range_max.d) {
 	  bin_id = NBINS;
 #ifdef USE_QTABLE
-	  /* The Start  of Making Quantizer Table -QT applied to block coefficients  */
-	  if (fabs(item) >= qtable[j])
-	    qtable[j] = fabs(item);
+	  /* get the highest values in each DCT location */
+	  if (fabs(item) >= qtable.d[j])
+	    qtable.d[j] = fabs(item);
 #endif /* USE_QTABLE */
 	}      
-	else 
-	  bin_id = (t_bin_id)((item-range_min)/bin_width);
+	else {
+	  t_bin_id tmp_bin_id;
+	  tmp_bin_id = (t_bin_id)((item-range_min.d)/bin_width.d);
+	  bin_id = conv_tbl[tmp_bin_id];
+	}
 #ifdef DEBUG
 	printf("bin_id = %d\n", bin_id);
 #endif
@@ -326,28 +386,33 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #endif
       } /* DOUBLE */
       else { /* FLOAT */
+	//float item = fabsf(a_x.f[i*BLK_SZ+j]);
 	float item = a_x.f[i*BLK_SZ+j];
 	t_bin_id bin_id;
-	if (item < range_min || item > range_max) {
+	if (item < (float)range_min.f || item > (float)range_max.f) {
 	  bin_id = NBINS;
 #ifdef USE_QTABLE
-	  /* The Start  of Making Quantizer Table -QT applied to block coefficients  */
-	  if (fabs(item) >= qtable[j])
-	    qtable[j] = fabs(item);
+	  /* get the largest values in each DCT location */
+	  if (fabsf(item) >= qtable.f[j])
+	    qtable.f[j] = fabsf(item);
 #endif /* USE_QTABLE */
 	}      
-	else 
-	  bin_id = (t_bin_id)((item-range_min)/bin_width);
+	else {
+	  t_bin_id tmp_bin_id;
+	  tmp_bin_id = (t_bin_id)((item-range_min.f)/bin_width.f);
+	  bin_id = conv_tbl[tmp_bin_id];
+	}
 #ifdef DEBUG
 	printf("bin_id = %d\n", bin_id);
-#endif
+#endif /* DEBUG */
 	bin_index[i*BLK_SZ+j] = bin_id;
 #ifdef DEBUG
 	printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (float)item, bin_id);
-#endif
+#endif /* DEBUG */
+	a_x.f[i*BLK_SZ+j] = item; /* update DCT coefficents with abs */
       } /* else: FLOAT */
     }
-    /* The End of of Making Quantizer Table  */
+    /* end of of making quantization table  */
   }
   if (var->datatype == DOUBLE)
     dct_finish();
@@ -361,80 +426,126 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
   else /* FLOAT */
     fwrite(a_x.f, sizeof(float), N, fp);
   fclose(fp);
-#endif
+
+  fp = fopen("DC.bin", "w+");
+  fwrite(DC, sizeof(float), nblk, fp);
+  fclose(fp);
+#endif /* DCT_FILE_DEBUG */
 
 #ifdef USE_QTABLE
 #ifdef DEBUG
   printf("Quantizer Table:\n");
-  for (j=0; j<BLK_SZ ; j++) { /* Show Quantizer Table */
-    printf("before qtable[%d] = %e \n", j, qtable[j]);
+  for (j=0; j<BLK_SZ ; j++) { 
+    printf("before qtable[%d] = %e \n", j, (var->datatype == DOUBLE ? qtable.d[j] : qtable.f[j]));
   }
-#endif
-  
-  for (j=1; j<BLK_SZ; j++) { /* Show Quantizer Table */
-    //if (qtable[j] < bin_maxes[NBINS-1]) {
-    if (qtable[j] < 1.0) {
-      qtable[j] = 1.0;
+#endif /* DEBUG */
+
+  FILE *fp_qtable = fopen("qtable.bin", "w+");
+  if (var->datatype == DOUBLE)
+    fwrite(qtable.d, sizeof(double), BLK_SZ, fp_qtable);
+  else /* FLOAT */
+    fwrite(qtable.f, sizeof(float), BLK_SZ, fp_qtable);
+  fclose(fp_qtable);
+
+  for (j=1; j<BLK_SZ; j++) {
+    if (var->datatype == DOUBLE) {
+      if (qtable.d[j] < 1.0) {
+	qtable.d[j] = 1.0;
+      }
+    }
+    else { /* FLOAT */
+      if (qtable.f[j] < 1.0) {
+	qtable.f[j] = 1.0;
+      }
     }
   }
   
 #ifdef DEBUG
   printf("Quantizer Table:\n");
-  for (j=0; j<BLK_SZ ; j++) { /* Show Quantizer Table */
-    printf("after qtable[%d] = %e \n", j, qtable[j]);
+  for (j=0; j<BLK_SZ ; j++) { 
+    printf("after qtable[%d] = %e \n", j, (var->datatype == DOUBLE ? qtable.d[j] : qtable.f[j]));
   }
-#endif
-#endif
+#endif /* DEBUG */
+#endif /* USE_QTABLE */
   
-  //unsigned int k = N;
-  double qt_factor = (NBINS == 255 ? 10.0 : 2000.0);
+#ifdef USE_QTABLE
+  if (var->datatype == DOUBLE)
+    qt_factor.d = (NBINS == 255 ? 10.0 : 2000.0);
+  else /* FLAOT */
+    qt_factor.f = (NBINS == 255 ? 10.0 : 2000.0);
+#endif /* USE_QTABLE */
   
   for (i=0; i<nblk; i++) {
     int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
     for (j=1; j<l_blk_sz; j++) {
       t_bin_id bin_id;
       bin_id = bin_index[i*BLK_SZ+j];
-      if (bin_id == NBINS) { 
+      if (bin_id == NBINS) {
 #ifdef USE_QTABLE
-        double item = (var->datatype == DOUBLE) ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]; /* in case of FLOAT, it will be cast to double */
-        /* if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound */
-	if (item < range_min) {
-          item = (item/qtable[j])*error_bound*qt_factor + range_min;
-        } else if (item > range_max) {
-          item = (item/qtable[j])*error_bound*qt_factor + range_max;
-        }
-	if (var->datatype == DOUBLE)
+	if (var->datatype == DOUBLE) {
+	  double item = a_x.d[i*BLK_SZ+j];
+	  /* if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound */
+	  if (item < range_min.d) {
+	    item = (item/qtable.d[j])*error_bound*qt_factor.d + range_min.d;
+	  } else if (item > range_max.d) {
+	    item = (item/qtable.d[j])*error_bound*qt_factor.d + range_max.d;
+	  }
 	  a_x.d[i*BLK_SZ+j] = item; /* update a_x with updated value */
-	else /* FLOAT */
-	  a_x.f[i*BLK_SZ+j] = item; /* update a_x with updated value */
-        if (item < range_min || item > range_max) {
-	  bin_id = NBINS;
+	  if (item < range_min.d || item > range_max.d) {
+	    bin_id = NBINS;
 #ifdef USE_TRUNCATE
-	  AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
-#else
-	  AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);;
+	    AC_exact[tot_AC_exact_count++] = (float)a_x.d[i*BLK_SZ+j];
+#else /* !USE_TRUNCATE */
+	    AC_exact[tot_AC_exact_count++] = a_x.d[i*BLK_SZ+j];
 #endif /* USE_TRUNCATE */
-	}
-	else
-	  bin_id = (t_bin_id)((item-range_min)/bin_width);
-        //bin_index[k++] = bin_id; 	 
+	  }
+	  else {
+	    t_bin_id tmp_bin_id;
+	    tmp_bin_id = (t_bin_id)((item-range_min.d)/bin_width.d);
+	    bin_id = conv_tbl[tmp_bin_id];
+	  }
 #ifdef DEBUG
-	printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (double)item, bin_id);
+	  printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, (double)item, bin_id);
 #endif /* DEBUG */
-#else 
+	} /* if DOUBLE */
+	else { /* FLOAT */
+	  float item = a_x.f[i*BLK_SZ+j];
+	  /* if out of bin area, normalize it to the area from range_max/range_min to range_max/range_min +/- error_bound */
+	  if (item < range_min.f) {
+	    item = (item/qtable.f[j])*error_bound*qt_factor.f + range_min.f;
+	  } else if (item > range_max.f) {
+	    item = (item/qtable.f[j])*error_bound*qt_factor.f + range_max.f;
+	  }
+	  a_x.f[i*BLK_SZ+j] = item; /* update a_x with updated value */
+	  if (item < range_min.f || item > range_max.f) {
+	    bin_id = NBINS;
+	    //AC_exact[tot_AC_exact_count++] = roundf(a_x.f[i*BLK_SZ+j]*TRUNC_BITS)/TRUNC_BITS;
+	    AC_exact[tot_AC_exact_count++] = a_x.f[i*BLK_SZ+j];
+	  }
+	  else {
+	    t_bin_id tmp_bin_id;
+	    tmp_bin_id = (t_bin_id)((item-range_min.f)/bin_width.f);
+	    bin_id = conv_tbl[tmp_bin_id];
+	  }
+#ifdef DEBUG
+	  printf("a_x[%d]=%e => %d\n", i*BLK_SZ+j, item, bin_id);
+#endif /* DEBUG */
+	}
+#else /* !USE_QTABLE, i.e., EC */
 #ifdef USE_TRUNCATE
-	AC_exact[tot_AC_exact_count++] = (float)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
+	//AC_exact[tot_AC_exact_count++] = (var->datatype == DOUBLE ? (roundf((float)a_x.d[i*BLK_SZ+j])*TRUNC_BITS)/TRUNC_BITS : roundf(a_x.f[i*BLK_SZ+j]*TRUNC_BITS)/TRUNC_BITS);
+	AC_exact[tot_AC_exact_count++] = (var->datatype == DOUBLE ? (float)a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
 #else
-	AC_exact[tot_AC_exact_count++] = (double)(var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]); /* in case of FLOAT, casting to double makes sense? */
+	AC_exact[tot_AC_exact_count++] = (var->datatype == DOUBLE ? a_x.d[i*BLK_SZ+j] : a_x.f[i*BLK_SZ+j]);
+#endif /* USE_TRUNCATE */
+#endif /* !USE_QTABLE, i.e., EC */
+    } /* bin_id == NBINS */
+  } /* for j */
+} /* for i */
+
+#ifdef SIZE_DEBUG
+  printf("total AC_exact_count = %d (%.2f percent) \n", tot_AC_exact_count, (double)(tot_AC_exact_count)/(double)N*100.0);
 #endif
-#endif /* USE_QTABLE */
-      }
-    }
-  }
-  
-  //#ifdef DEBUG
-  printf("total AC_exact_count = %d\n", tot_AC_exact_count);
-  //#endif
 
 #ifdef TIME_DEBUG
   gettimeofday(&end_t, NULL);
@@ -442,8 +553,6 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 
   gettimeofday(&start_t, NULL);
 #endif
-  
-  free(bin_maxes);
 
 #ifdef DEBUG
   int bin_freq[NBINS+1] = {0};
@@ -477,11 +586,25 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
   fp_index = fopen(bin_index_file, "wb");
   fwrite(bin_index, N, 1, fp_index);
   fclose(fp_index);
+
+  char AC_exact_file[640];
+  FILE *fp_AC_exact;
+  sprintf(AC_exact_file, "AC_exact.bin"); 
+  fp_AC_exact = fopen(AC_exact_file, "wb");
+  fwrite(AC_exact, tot_AC_exact_count*sizeof(float), 1, fp_AC_exact);
+  fclose(fp_AC_exact);
+
+#if 0
+  /* zigzag scanning */
+  for (i=0; i<nblk; i++)
+    for (j=0; j<BLK_SZ; j++)
+      bin_index[i*BLK_SZ+j] = zigzag[bin_index[i*BLK_SZ+j]];
+#endif
   
 #ifdef DEBUG
   printf("tot_AC_exact_count=%d\n", tot_AC_exact_count);
 #ifdef USE_QTABLE  
-  printf("bin_index before compression = %lu\n", k*sizeof(t_bin_id));
+  printf("bin_index before compression = %lu\n", N*sizeof(t_bin_id)); // TODO: k should be N? k was used before AC normalization (HPEC'20)
 #else  
   printf("bin_index before compression = %lu\n", N*sizeof(t_bin_id));
 #endif  
@@ -516,14 +639,14 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #endif  
   uLong compSize_binindex = compressBound(ucompSize_binindex);
 
-  int windowBits = 14; 
-  deflateInit2(&defstream[0], 9, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+  int windowBits = 15; 
+  deflateInit2(&defstream[0], Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
  
   defstream[0].avail_in = ucompSize_binindex;
   defstream[0].next_in = (Bytef *)bin_index;
   defstream[0].avail_out = compSize_binindex;
   defstream[0].next_out = (Bytef *)bin_indexz;
-  defstream[0].data_type = Z_UNKNOWN; /* Z_ASCII, Z_BINARY, Z_UNKNOWN */
+  defstream[0].data_type = Z_UNKNOWN; /* Z_TEXT(Z_ASCII), Z_BINARY, Z_UNKNOWN */
 
   if (pthread_create(&thread[0], &attr, compress_thread, (void *)&defstream[0])) {
     fprintf(stderr, "Error creating thread\n");
@@ -543,7 +666,7 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
   uLong compSize_DC = compressBound(ucompSize_DC);
 #endif
 
-  deflateInit2(&defstream[1], 9, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+  deflateInit2(&defstream[1], Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
  
   defstream[1].avail_in = ucompSize_DC;
   defstream[1].next_in = (Bytef *)DC;
@@ -562,14 +685,14 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
   defstream[2].opaque = Z_NULL;
   
 #ifdef USE_TRUNCATE
-  uLong ucompSize_AC_exact = N*sizeof(float);
+  uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(float);
   uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
 #else
-  uLong ucompSize_AC_exact = N*sizeof(double);
+  uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(double);
   uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
 #endif
 
-  deflateInit2(&defstream[2], 9, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+  deflateInit2(&defstream[2], Z_DEFAULT_COMPRESSION, Z_DEFLATED, windowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
 
   defstream[2].avail_in = ucompSize_AC_exact;
   defstream[2].next_in = (Bytef *)AC_exact;
@@ -650,15 +773,22 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
 #endif
 
   *outSize = sizeof(struct header) + compSize_binindex + compSize_DC + compSize_AC_exact;
+#ifdef USE_QTABLE
+  *outSize += (var->datatype == DOUBLE ? sizeof(double)*BLK_SZ : sizeof(float)*BLK_SZ);
+#endif
 
   h.datatype = var->datatype;
   h.num_elements = N;
   h.error_bound = error_bound;
   h.tot_AC_exact_count = tot_AC_exact_count;
-  if (var->datatype == DOUBLE) 
+  if (var->datatype == DOUBLE) {
     h.scaling_factor.d = bs.sf.d;
-  else /* FLOAT */
-    h.scaling_factor.f = bs.sf.f; 
+    h.mean.d = bs.mean.d;
+  }
+  else { /* FLOAT */ 
+    h.scaling_factor.f = bs.sf.f;
+    h.mean.f = bs.mean.f;
+  }
   h.bindex_sz_compressed = compSize_binindex;
   h.DC_sz_compressed = compSize_DC;
   h.AC_exact_sz_compressed = compSize_AC_exact;
@@ -681,27 +811,32 @@ memset(bin_index, 0, sizeof(t_bin_id)*N);
   memcpy(cur_p, DCz2, compSize_DC);
   cur_p += compSize_DC;
   memcpy(cur_p, AC_exactz2, compSize_AC_exact);
-#ifdef USE_QTABLE
   cur_p += compSize_AC_exact;
-  memcpy(cur_p, qtable, BLK_SZ*sizeof(double));
+#ifdef USE_QTABLE
+  if (var->datatype == DOUBLE)
+    memcpy(cur_p, qtable.d, BLK_SZ*sizeof(double));
+  else /* FLAOT */
+    memcpy(cur_p, qtable.f, BLK_SZ*sizeof(float));
 #endif /* USE_QTABLE */
 
-  if (var->datatype == DOUBLE)
+  if (var->datatype == DOUBLE) {
     free(a_x.d);
-  else /* FLOAT */
+#ifdef USE_QTABLE
+    free(qtable.d);
+#endif
+  }
+  else { /* FLOAT */
     free(a_x.f);
+#ifdef USE_QTABLE
+    free(qtable.f);
+#endif
+  }
   free(DC);
   free(DCz2); 
-  free(bin_center);
-  //free(AC_exact_count);
-  //free(AC_exact_countz2);
   free(AC_exact);
   free(AC_exactz2);
   free(bin_index);
   free(bin_indexz2);
-#ifdef USE_QTABLE
-  free(qtable);
-#endif
   
 #ifndef SIZE_DEBUG
   printf("outSize = %zu\n", *outSize);

@@ -20,11 +20,33 @@
 #include "dctz.h"
 #include "dct.h"
 
-union
-{
-  float *f;
-  double *d;
-} var_xr; /* var to store the result of IDCT */
+t_bin_id conv_tbl_i[NBINS] = {
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+  32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+  48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+  64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+  80,  81,  82,  83,  84,  85, 86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
+  96,  97,  98,  99,  100,  101,  102,  103,  104,  105,  106,  107,  108,  109,  110,  111,
+  112,  113,  114,  115,  116,  117,  118,  119,  120,  121,  122,  123,  124,   125,   126,   127,
+  128,   129,   130,   131,  132,   133,  134,  135,  136,  137,  138,  139,  140,  141,  142,  143,
+  144,  145,  146,  147,  148,  149,  150,  151,  152,  153,  154,  155,  156,  157,  158,  159,
+  160,  161,  162,  163,  164,  165,  166,  167,  168,  169,  170,  171,  172,  173,  174,  175,
+  176,  177,  178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,
+  192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207,
+  208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223,
+  224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
+  240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254};
+
+t_bin_id zigzagi[BLK_SZ] = {
+  0,  1,  8,  16, 9,  2,  3,  10,
+  17, 24, 32, 25, 18, 11, 4,  5,
+  12, 19, 26, 33, 40, 48, 51, 34,
+  27, 20, 13, 6,  7,  14, 21, 28,
+  35, 42, 49, 56, 57, 50, 43, 36,
+  29, 22, 15, 23, 30, 37, 44, 51,
+  58, 59, 52, 45, 38, 31, 39, 46,
+  53, 60, 61, 54, 47, 55, 62, 63};
 
 int dctz_decompress(t_var *var_z, t_var *var_r)
 {
@@ -33,7 +55,6 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   struct timeval start_t, end_t, gstart_t; /* for measuring timing */
   double sf_t, zlib_t, idct_t, decomp_t, malloc_t, genbin_t;
 #endif
-  double *bin_maxes, *bin_center;
   t_bin_id *bin_index, *bin_indexz;
   unsigned int tot_AC_exact_count;
 #ifdef USE_TRUNCATE
@@ -44,12 +65,24 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   struct header h;
   double error_bound;
 #ifdef USE_QTABLE
-  double *qtable;    /* Quantizer Table */
+  union {
+    double *d;
+    float *f;
+  } qtable; /* Quantizer Table */
 #endif /* USE_QTABLE */
-  t_datatype datatype = var_z->datatype;
+  union 
+  {
+    float *f;
+    double *d;
+  } var_xr, bin_center;
+  union 
+  {
+    float f;
+    double d;
+  } bin_width, range_min, range_max, qt_factor;
 
   unsigned char *cur_p;
-  if (datatype == DOUBLE) {
+  if (var_z->datatype == DOUBLE) {
     cur_p = (unsigned char *)var_z->buf.d;
     memcpy(&h, var_z->buf.d, sizeof(struct header));
     cur_p = (unsigned char *)var_z->buf.d + sizeof(struct header);
@@ -76,14 +109,13 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
     fprintf(stderr, "Out of memory: bin_indexz[]\n");
     exit(1);
   }
-
 #endif  
 
 #ifdef DEBUG
-  printf("nitems=%d, tot_AC_exact_count=%d, scaling_factor=%e, bindex_sz_compressed=%d, DC_sz_compressed=%d, AC_exact_sz_compressed=%d,\n", h.num_elements, h.tot_AC_exact_count, (datatype == DOUBLE)?h.scaling_factor.d:h.scaling_factor.f, h.bindex_sz_compressed, h.DC_sz_compressed, h.AC_exact_sz_compressed);
+  printf("nitems=%d, tot_AC_exact_count=%d, scaling_factor=%e, bindex_sz_compressed=%d, DC_sz_compressed=%d, AC_exact_sz_compressed=%d,\n", h.num_elements, h.tot_AC_exact_count, (var_z->datatype == DOUBLE)?h.scaling_factor.d:h.scaling_factor.f, h.bindex_sz_compressed, h.DC_sz_compressed, h.AC_exact_sz_compressed);
 #endif
 #ifdef DEBUG
-  printf("N=%d, nblk=%d, SF=%e\n", N, nblk, (datatype == DOUBLE) ? h.scaling_factor.d : h.scaling_factor.f);
+  printf("N=%d, nblk=%d, SF=%e\n", N, nblk, (var_z->datatype == DOUBLE) ? h.scaling_factor.d : h.scaling_factor.f);
 #endif
 
 #ifdef USE_TRUNCATE
@@ -124,13 +156,21 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 
 #ifdef USE_QTABLE
   /* Initialize Quantizer Table */
-  if (NULL == (qtable = (double *)malloc(BLK_SZ*sizeof(double)))) {
+  if (var_z->datatype == DOUBLE) {
+    if (NULL == (qtable.d = (double *)malloc(BLK_SZ*sizeof(double)))) {
       fprintf(stderr, "Out of memory: qtable\n");
       exit(1);
-   }
+    }
+  }
+  else { /* FLOAT */
+    if (NULL == (qtable.f = (float *)malloc(BLK_SZ*sizeof(float)))) {
+      fprintf(stderr, "Out of memory: qtable\n");
+      exit(1);
+    }
+  }
 #endif
 
-  if (datatype == DOUBLE) {
+  if (var_z->datatype == DOUBLE) {
     if (NULL == (var_xr.d = (double *)malloc(N*sizeof(double)))) {
       fprintf(stderr, "Out of memory: var_xr\n");
       exit(1);
@@ -152,14 +192,17 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   memcpy(AC_exactz, cur_p, h.AC_exact_sz_compressed);
 #ifdef USE_QTABLE
   cur_p += h.AC_exact_sz_compressed;
-  memcpy(qtable, cur_p, BLK_SZ*sizeof(double));
+  if (var_z->datatype == DOUBLE)
+    memcpy(qtable.d, cur_p, BLK_SZ*sizeof(double));
+  else /* FLOAT */
+    memcpy(qtable.f, cur_p, BLK_SZ*sizeof(float));
 #endif
 
 #ifdef USE_QTABLE
 #ifdef DEBUG
     printf("Quantizer Table:\n");
     for (j=1; j<BLK_SZ ; j++) { /* Show Quantizer Table */
-      printf("qtable[%d] = %e \n", j, qtable[j]);
+      printf("qtable[%d] = %e \n", j, (var_z->datatype == DOUBLE) ? qtable.d[j] : qtable.f[j]);
     }
 #endif
 #endif
@@ -188,13 +231,13 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   uLong ucompSize_DC = nblk*sizeof(float);
   uLong compSize_DC = compressBound(ucompSize_DC);
 
-  uLong ucompSize_AC_exact = N*sizeof(float); /* tot_ac_exact instead of N? */
+  uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(float); /* tot_ac_exact instead of N? */
   uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
 #else
   uLong ucompSize_DC = nblk*sizeof(double);
   uLong compSize_DC = compressBound(ucompSize_DC);
 
-  uLong ucompSize_AC_exact = N*sizeof(double); /* tot_ac_exact instead of N? */
+  uLong ucompSize_AC_exact = tot_AC_exact_count*sizeof(double); /* tot_ac_exact instead of N? */
   uLong compSize_AC_exact = compressBound(ucompSize_AC_exact);
 #endif
 
@@ -244,7 +287,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 
   inflate(&infstream[1], Z_NO_FLUSH);
   inflateEnd(&infstream[1]);
-#ifndef SIZE_DEBUG
+#ifdef SIZE_DEBUG
   printf("uncompressed DC size is: %lu\n", infstream[1].total_out);
 #endif
 
@@ -274,7 +317,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 
   inflate(&infstream[2], Z_NO_FLUSH);
   inflateEnd(&infstream[2]);
-#ifndef DEBUG
+#ifdef SIZE_DEBUG
   printf("uncompressed AC_exact size is: %lu\n", infstream[2].total_out);
 #endif
 
@@ -291,16 +334,19 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   
   /* restore AC_exact */
   nblk = CEIL(h.num_elements, BLK_SZ);
- 
-  if (NULL == (bin_maxes = (double *)malloc(NBINS*sizeof(double)))) {
-    fprintf(stderr, "Out of memory: bin_maxes\n");
-    exit(1);
-  }
 
-  if (NULL == (bin_center = (double *)malloc(NBINS*sizeof(double)))) {
-    fprintf(stderr, "Out of memory: bin_center\n");
-    exit(1);
+  if (var_z->datatype == DOUBLE) {
+    if (NULL == (bin_center.d = (double *)malloc(NBINS*sizeof(double)))) {
+      fprintf(stderr, "Out of memory: bin_center\n");
+      exit(1);
+    }
   }
+  else { /* FLOAT */
+    if (NULL == (bin_center.f = (float *)malloc(NBINS*sizeof(float)))) {
+      fprintf(stderr, "Out of memory: bin_center\n");
+      exit(1);
+    }
+  }  
 
 #ifdef TIME_DEBUG
   gettimeofday(&end_t, NULL);
@@ -308,8 +354,11 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 
   gettimeofday(&start_t, NULL);
 #endif
-  
-  gen_bins(0, 0, bin_maxes, bin_center, NBINS, error_bound);
+
+  if (var_z->datatype == DOUBLE)
+    gen_bins(0, 0, bin_center.d, NBINS, error_bound);
+  else /* FLOAT */
+    gen_bins_f(0, 0, bin_center.f, NBINS, error_bound);
 
 #ifdef TIME_DEBUG
   gettimeofday(&end_t, NULL);
@@ -319,13 +368,19 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
   
   unsigned int pos = 0;
-  //unsigned int c = N;
 
-  double range_max = error_bound * NBINS;
-  double range_min = -error_bound * NBINS;
-  double qt_factor = (NBINS == 255 ? 10.0 : 2000.0);
+  if (var_z->datatype == DOUBLE) {
+    range_max.d = error_bound * NBINS;
+    range_min.d = -error_bound * NBINS;
+    qt_factor.d = (NBINS == 255 ? 10.0 : 2000.0);
+  }
+  else { /* FLAOT */
+    range_max.f = error_bound * NBINS;
+    range_min.f = -error_bound * NBINS;
+    qt_factor.f = (NBINS == 255 ? 10.0 : 2000.0);
+  }
 
-  if (datatype == DOUBLE)
+  if (var_z->datatype == DOUBLE)
     dct_init(BLK_SZ);
   else /* FLOAT */
     dct_init_f(BLK_SZ);
@@ -333,7 +388,7 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   /* IDCT block decomposed */
   for (i=0; i<nblk; i++) { /* for each decomposed blk */
     int l_blk_sz = ((i==nblk-1)&&(rem != 0))?rem:BLK_SZ;
-    if (datatype == DOUBLE) {
+    if (var_z->datatype == DOUBLE) {
       var_xr.d[i*BLK_SZ] = DC[i]; /* if USE_TRUNCATE, then float -> double */
 #ifdef DEBUG
       printf("var_xr[%d]=%e\n", i*BLK_SZ, var_xr.d[i*BLK_SZ]);
@@ -344,19 +399,13 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
 	if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */
-	  //sbin_id = bin_index[c++];
-
-	  //if (sbin_id == NBINS) {
-	    var_xr.d[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
-	    pos++;
-	  //}
-	  //else {
-	  //  var_xr.d[i*BLK_SZ+j] = bin_center[sbin_id];
-	  //}
+	  var_xr.d[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
+	  pos++;
 	  if (var_xr.d[i*BLK_SZ+j] > 0) {
-	    var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
-	  } else {
-	    var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_min)/(error_bound*qt_factor))*qtable[j];
+	    var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_max.d)/(error_bound*qt_factor.d))*qtable.d[j];
+	  }
+	  else {
+	    var_xr.d[i*BLK_SZ+j] = ((var_xr.d[i*BLK_SZ+j] - range_min.d)/(error_bound*qt_factor.d))*qtable.d[j];
 	  }
 #else /* DCT_EC */
 	  var_xr.d[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
@@ -364,13 +413,13 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif /* USE_QTABLE */
 	}
 	else {
-	  var_xr.d[i*BLK_SZ+j] = bin_center[bin_index[i*BLK_SZ+j]];
+	  var_xr.d[i*BLK_SZ+j] = bin_center.d[conv_tbl_i[bin_index[i*BLK_SZ+j]]];
 	}
 #ifdef DEBUG
 	printf("after var_xr[%d]=%e\n", i*BLK_SZ+j, var_xr.d[i*BLK_SZ]+j);
 #endif
       }
-
+      
       if ((i==nblk-1) && (rem!=0)) {
 	dct_finish();
 	dct_init(rem);
@@ -396,19 +445,12 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif
 	if (bin_index[i*BLK_SZ+j] == NBINS) {
 #ifdef USE_QTABLE /* DCT_QT */
-	  //sbin_id = bin_index[c++];
-	  
-	  //if (sbin_id == NBINS) {
-	    var_xr.f[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
-	    pos++;
-	  //}
-	  //else {
-	  //  var_xr.f[i*BLK_SZ+j] = bin_center[sbin_id];
-	  //}
+	  var_xr.f[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
+	  pos++;
 	  if (var_xr.f[i*BLK_SZ+j] > 0) {
-	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_max)/(error_bound*qt_factor))*qtable[j];
+	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_max.f)/(error_bound*qt_factor.f))*qtable.f[j];
 	  } else {
-	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_min)/(error_bound*qt_factor))*qtable[j];
+	    var_xr.f[i*BLK_SZ+j] = ((var_xr.f[i*BLK_SZ+j] - range_min.f)/(error_bound*qt_factor.f))*qtable.f[j];
 	  }
 #else /* DCT_EC */
 	  var_xr.f[i*BLK_SZ+j] = AC_exact[pos]; /* if USE_TRUNCATE, then float -> double */
@@ -416,7 +458,8 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
 #endif /* USE_QTABLE */
 	}
 	else {
-	  var_xr.f[i*BLK_SZ+j] = bin_center[bin_index[i*BLK_SZ+j]];
+	  //var_xr.f[i*BLK_SZ+j] = bin_center.f[bin_index[i*BLK_SZ+j]]
+	  var_xr.f[i*BLK_SZ+j] = bin_center.f[conv_tbl_i[bin_index[i*BLK_SZ+j]]];
 	}
 #ifdef DEBUG
 	printf("after var_xr[%d]=%e\n", i*BLK_SZ+j, var_xr.f[i*BLK_SZ]+j);
@@ -448,18 +491,22 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   gettimeofday(&start_t, NULL);
 #endif
 
-  if (datatype == DOUBLE) {
+  if (var_z->datatype == DOUBLE) {
     /*  deapply scaling factor */
     if (h.scaling_factor.d != 1.0) {
-      for (i=0; i<N; i++)
+      for (i=0; i<N; i++) {
 	var_r->buf.d[i] *= h.scaling_factor.d;
+	//var_r->buf.d[i] += (h.mean.d)/h.scaling_factor.d;
+      }
     }
   }
   else { /* FLOAT */
     /* deapply scaling factor */
     if (h.scaling_factor.f != 1.0) {
-      for (i=0; i<N; i++)
+      for (i=0; i<N; i++) {
 	var_r->buf.f[i] *= h.scaling_factor.f;
+	//var_r->buf.f[i] += h.mean.f/h.scaling_factor.f;
+      }
     }
   }
 
@@ -480,17 +527,22 @@ int dctz_decompress(t_var *var_z, t_var *var_r)
   printf("decomp_time = %f (s), decompression rate = %f (MB/s)\n", decomp_t/1000000, decomp_rate);
 #endif
 
-  if (datatype == DOUBLE)
+  if (var_z->datatype == DOUBLE) {
     idct_finish();
-  else /* FLOAT */
-    idct_finish_f();
-  free(AC_exact);
-  free(bin_index);
-  free(bin_maxes);
-  free(bin_center);
+    free(bin_center.d);
 #ifdef USE_QTABLE
-  free(qtable);
+    free(qtable.d);
 #endif /* USE_QTABLE */
+  }
+  else { /* FLOAT */
+    idct_finish_f();
+    free(bin_center.f);
+#ifdef USE_QTABLE
+    free(qtable.f);
+#endif /* USE_QTABLE */
+  }
+  free(bin_index);
+  free(AC_exact);
 
   return(1);
 }
